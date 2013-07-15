@@ -1,0 +1,201 @@
+\documentclass{article}		%Petite taille de doc
+
+\usepackage[francais]{babel}	%Doc fr
+\usepackage[T1]{fontenc}	%Caracteres accentues
+\usepackage[utf8]{inputenc}  
+\usepackage{amsfonts}
+
+\begin{document}
+\title{Learning Parities with Noise}
+\author{Thomas Bourgeat }
+\date\today
+\maketitle
+\section{Introduction au problème du LPN}
+
+\subsection{Définition}
+\subsection{Spécificité du problème}
+
+\section{Protocoles et preuves de sécurités}
+
+\begin{itemize}
+\item HB unsafe
+\item HB
+\item Travail de Vadim -> preuve que c'est robuste contre MITM
+\item Attaque contre MITM parallele -> voir si correction possible 
+\end{itemize}
+
+
+\section{Modèles et cryptanalyses}
+Les protocoles présentés précedemment font tous l'hypothèse que le
+problème du LPN est difficile. 
+de l'art sur la résolution de ce problème. Tout d'abord nous allons
+présenter rapidement les deux grands modèles d'apprentissage SQ et PAC, ainsi que le
+résultat majeur de BKW de difficulté du LPN dans le modèle SQ. 
+
+\subsection{modèles}
+\subsubsection{Modèle SQ}
+
+\subsubsection{Modèle PAC}
+
+\subsection{Algorithmes pour attaquer le LPN}
+Il est necessaire de distinguer deux grandes classes
+d'algorithmes, en fonction du nombre de samples (donc d'authentification)
+necessaire. Dans un premier temps nous allons étudier les algorithmes
+necessitant peu de queries (donc plus lents), puis ensuite nous verrons
+les algorithmes "BKW-like" necessitants plus de queries.
+
+
+\subsubsection{Peu de queries}
+\paragraph{Exhaustive}
+plusieurs types d'exhaustives
+\paragraph{Grigorescu}
+\paragraph{Dual : Contribution } Problème dual réduit à  un decoding
+problem ou un SVP. Permet de plugger les améliorations d'Antoine Joux et Alexander May. (new)
+\subparagraph{Decoding in $2^{n/20}$}
+\subparagraph{Via LLL}
+\paragraph{Générer plus de samples} Générer beaucoup de samples : Lyubashevski
+\paragraph{Changer le modèle} Stratégie de se placer dans un modèle un peu différent avec Arora et Ge.Ou la résolution devient polynomial 
+\paragraph{Supprimer le bruit : Contribution}\label{SAT}
+Le voir comme un système polynomial : (New) implémenté avec ou. 
+
+
+
+\subsubsection{Approche "légo"}
+Il s'avère que les algorithmes  necessitant un grand nombre
+de queries sont tous construits autour des mêmes idées. Dans le but de
+montrer cette unité, dans cette partie nous allons présenter différents
+blocs de bases, extraits d'algorithmes divers. Ensuite nous décrirons les
+différentes attaques comme des constructions avec ces blocs. Enfin nous
+présenterons notre propre vision.  
+\begin{itemize}
+\item Réduction de la taille en augmentant le bruit
+\item Réduction à un secret sparse (Kirchner)
+\item Stratégie de résolution final
+\begin{itemize}
+\item Vote à la majorité
+\item FFT
+\item Recherche exhaustive via Vaudenay : approche SFT \label{SFT}
+\end{itemize} 
+\end{itemize}
+
+\paragraph{BKW et LF}
+
+\paragraph{Kirchner et Bernstein}
+ Toucher deux mots de l'idée de Bernstein de rajouter une structure
+d'anneau pour réduire le cout de calcul du produit.
+
+\paragraph{Amélioration asymptotique par SFT}
+
+\paragraph{Optimisation des paramètres du précèdent.}
+
+
+\section{Implémentation}
+\subsection{C}
+\subsubsection{Éléments de bases pour LPN}
+J'ai programmé en C un ensemble de fonctions pour pouvoir effectuer des
+tests sur le LPN. L'implémentation est compacte : je stocke dans un
+entier non-signé 32 valeurs binaires. Cette représentation compacte était
+faite en prévision du coût mémoire des attaques BKW-like. Basé sur cette représentation, j'ai
+programmé l'ensemble des outils de bases d'algèbre linéaire necessaires
+simples :
+\\
+\begin{itemize}
+\item Produit scalaire et matriciel naif 
+\item Elimination de Gauss-Jordan
+\item Ajout d'un $\epsilon$-bruit.
+\item Génération des mots de poid de hamming fixé
+\item Tri rapide sur les bits entre k et (k+i)
+\item et de nombreux tests divers et variés comme l'étape de réduction de
+BKW
+\end{itemize}
+
+\subsubsection{Phase finale du LPN en C}
+J'ai implémenté en C, la phase finale qui consiste à faire une recherche
+exhaustive en testant les mots de poid fixé, en $O(n)$. Via un calcul
+d'approximation de coefficients de Fourier, expliquée en~\ref{SFT}.
+\\
+Cette phase est donc composée d'une recherche exhaustive sur des mots de
+poid de hamming petit fixé. Pour paralleliser cette implémentation, j'ai
+mis en bijection les mots de poid de hamming fixé et l'intervalle
+d'entier $[0, C_{n}^{w}]$, de ce fait les itérations deviennent
+entièrement indépendantes. Permettant une parallelisation à une première
+échelle via MPI.
+A une deuxième échelle et de manière transparente, j'ai utilisé openMP
+pour paralleliser sur plusieurs coeurs, les boucles que doivent faire
+chaque esclave. 
+\\\\
+Autre avantage : l'utilisation de MPI permet de broadcaster facilement
+l'instance du LPN construite par le maitre à toutes les machines de la
+grappe. En pratique le calcul a été fait sur 8 machines de
+l'ens\footnote{The super-new spice machines}(2x Intel Xeon E5649 @
+2.53GHz).  
+Tableau de performance : TODO
+
+\subsection{Sage : c'est le bien}
+Une fois compilé (9h tout de même...), Sage est particulièrement efficace
+pour tester rapidement des idées : je pense à un facteur de compression
+entre 10 et 100. De plus Sage
+implémente plus ou moins l'état de l'art des algorithmes classiques : multiplication
+matricielle, SAT-solver etc...  
+
+
+\subsubsection{Systèmes polynomiaux}
+Le but fut d'implémenter ce que nous avons proposé en~\ref{SAT}
+\\\\
+En Sage, on déclare l'anneau dans lequel on travail, la méthode de
+résolution du système et c'est fini. Autrement dit l'essentiel du travail
+est de générer les équations : de traiter les données. Etant donné que la
+complexité de SAT et Groebner est très mal connue, le but était
+uniquement d'effectuer un test, pour savoir si on se trouvait dans une
+zone ou les méthodes usuelles se "comportent bien", ou pas\footnote{Je
+présente ici chronologiquement ce que j'ai compris.}.
+J'ai pris une instance du LPN de taille 32, générée en C, et ensuite j'ai
+traitée ces données via OCaml pour les formater pour Sage\footnote{Il
+était possible de tout faire directement en Sage, mais je n'avais pas
+fait de OCaml depuis plusieurs semaines!}. Les équations polynomiales
+étaient toutes de degrès 2 : produit des équations $2*i$ et $2*i+1$
+linéaire du problème LPN initial.
+\paragraph{Résolution via Groebner}
+Exécuté sur ma machine plusieurs heures, ça n'a pas terminé. Peut-etre 
+que le grand nombre de variables dans chaque équation est la cause de
+l'echec de la résolution via
+bases de Groebner.
+\paragraph{Résolution via SAT}
+Via SAT, l'instance a été résolue en une dizaine de minutes. Ceci est
+assez lent, à peine mieux qu'une recherche exhaustive. 
+%TODO : PRECISER
+\\
+Après avoir regardé
+un peu l'état de l'art du SAT solving, il semble qu'une fois encore la
+structure des entrées liées au LPN est très différente des données
+classiques que l'on donne au SAT solver : la plupart du temps il y a un
+nombre très réduit de littéraux dans chaque clauses, bien sur on peut se
+ramener à ce cas en introduisant de nouvelles variables, mais alors le
+rapport $\alpha=\frac {\sharp Clauses}{\sharp Variables}$ devient plus grand.
+Or, (REF Mézard) étudie que lorsque le nombre de variables tend vers
+l'infini, presque toutes (au sens probabiliste) les
+instances avec $\alpha > 4.506$ sont insatisfiables. Ce sont des
+"hard-SAT".\footnote{Beaucoup de cycles dans le graphe de représentation}
+
+Ces lectures à posteriori\footnote{Toujours la difficulté de savoir s'il
+est plus rapide d'implémenter pour tester, ou de trouver une biblio sur
+le sujet} justifient que cette approche ne passera pas pour
+des paramètres plus gros. 
+
+\subsubsection{Réduction du LPN au Short Vector Problem}
+
+
+\section{Conclusion}
+
+\begin{itemize}
+\item Vaudenay *2
+\item Shallue??
+\item New generic algorithms for hard knapsacks Joux
+\item Decoding random linear code 1+1 en n/20 May/Joux
+\end{itemize}
+
+\nocite{DBLP:conf/rfidsec/BernsteinL12}
+\bibliographystyle{plain}
+\bibliography{biblio}
+\end{document}
+
