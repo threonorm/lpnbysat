@@ -14,17 +14,22 @@
 
 \subsection{Définition}
 \subsection{Spécificité du problème}
+\cite{Dam}
 
 \section{Protocoles et preuves de sécurités}
-
-\begin{itemize}
-\item HB unsafe
-\item HB
-\item Travail de Vadim -> preuve que c'est robuste contre MITM
-\item Attaque contre MITM parallele -> voir si correction possible 
-\end{itemize}
-
-
+\subsection{Chiffrement}
+\subsection{Authentification clef publique}
+\subsection{Authentification clef privé}
+\subsubsection{HB}
+\paragraph{Sécurisé dans le modèle passif}
+\paragraph{Une attaque active}
+\subsubsection{HB\sharp}
+\paragraph{Sécurisé dans le modèle actif}
+\paragraph{Une attaque man-in-the-middle}
+\subsubsection{Man-in-the-middle secure authentication schemes}
+\paragraph{Sécurisé dans le modèle man-in-the-middle}
+\paragraph{Une attaque concurrente}
+\paragraph{TODO: Réfléchir à une proposition de correction}
 \section{Modèles et cryptanalyses}
 Les protocoles présentés précedemment font tous l'hypothèse que le
 problème du LPN est difficile. 
@@ -47,18 +52,20 @@ les algorithmes "BKW-like" necessitants plus de queries.
 
 \subsubsection{Peu de queries}
 \paragraph{Exhaustive}
-plusieurs types d'exhaustives
-\paragraph{Grigorescu}
+plusieurs types d'exhaustives \cite{Gol}
+\paragraph{Grigorescu} \cite{Indyk} \cite{Grigo}
+\paragraph{Valiant} \cite{Valiant}
 \paragraph{Dual : Contribution } Problème dual réduit à  un decoding
 problem ou un SVP. Permet de plugger les améliorations d'Antoine Joux et Alexander May. (new)
-\subparagraph{Decoding in $2^{n/20}$}
+\subparagraph{Decoding in $2^{n/20}$} \cite{Stern}
 \subparagraph{Via LLL}
-\paragraph{Générer plus de samples} Générer beaucoup de samples : Lyubashevski
-\paragraph{Changer le modèle} Stratégie de se placer dans un modèle un peu différent avec Arora et Ge.Ou la résolution devient polynomial 
+\paragraph{Générer plus de samples} Générer beaucoup de samples :
+Lyubashevski \cite{Vadim}
+\paragraph{Changer le modèle} \cite{Arora} Stratégie de se placer dans un modèle un peu différent avec Arora et Ge.Ou la résolution devient polynomial 
 \paragraph{Supprimer le bruit : Contribution}\label{SAT}
-Le voir comme un système polynomial : (New) implémenté avec ou. 
-
-
+Le voir comme un système polynomial : (New) dont la résolution se fait
+soit en relinéarisant, soit via des bases de Groebner soit par
+SAT-solving. 
 
 \subsubsection{Approche "légo"}
 Il s'avère que les algorithmes  necessitant un grand nombre
@@ -74,14 +81,17 @@ présenterons notre propre vision.
 \begin{itemize}
 \item Vote à la majorité
 \item FFT
-\item Recherche exhaustive via Vaudenay : approche SFT \label{SFT}
+\item Recherche exhaustive via Vaudenay : approche SFT \cite{Akavia} \label{SFT}
 \end{itemize} 
 \end{itemize}
 
 \paragraph{BKW et LF}
+\cite{BKW}
+\cite{LF}
 
 \paragraph{Kirchner et Bernstein}
- Toucher deux mots de l'idée de Bernstein de rajouter une structure
+\cite{Bernstein}
+\cite{Kirchner} Toucher deux mots de l'idée de Bernstein de rajouter une structure
 d'anneau pour réduire le cout de calcul du produit.
 
 \paragraph{Amélioration asymptotique par SFT}
@@ -166,13 +176,13 @@ assez lent, à peine mieux qu'une recherche exhaustive.
 %TODO : PRECISER
 \\
 Après avoir regardé
-un peu l'état de l'art du SAT solving, il semble qu'une fois encore la
+un peu l'état de l'art du SAT solving, notamment \cite{Mezard}, il semble qu'une fois encore la
 structure des entrées liées au LPN est très différente des données
 classiques que l'on donne au SAT solver : la plupart du temps il y a un
 nombre très réduit de littéraux dans chaque clauses, bien sur on peut se
 ramener à ce cas en introduisant de nouvelles variables, mais alors le
 rapport $\alpha=\frac {\sharp Clauses}{\sharp Variables}$ devient plus grand.
-Or, (REF Mézard) étudie que lorsque le nombre de variables tend vers
+Or, \cite{Dubois} étudie que lorsque le nombre de variables tend vers
 l'infini, presque toutes (au sens probabiliste) les
 instances avec $\alpha > 4.506$ sont insatisfiables. Ce sont des
 "hard-SAT".\footnote{Beaucoup de cycles dans le graphe de représentation}
@@ -194,7 +204,6 @@ des paramètres plus gros.
 \item Decoding random linear code 1+1 en n/20 May/Joux
 \end{itemize}
 
-\nocite{DBLP:conf/rfidsec/BernsteinL12}
 \bibliographystyle{plain}
 \bibliography{biblio}
 \end{document}

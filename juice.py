@@ -1,4 +1,4 @@
-n=32;
+n=64;
 nline=3*n;
 epsilon=0.048;
 s=random_matrix(GF(2),n,1);
@@ -59,6 +59,6 @@ breal=a*s
 def make_and_reduce(a,b):
   noyau=a.kernel()
   res=(noyau.matrix())
-  C=LinearCode(res)
-  return(res.transpose().kernel().matrix().change_ring(ZZ).LLL().change_ring(GF(2)))
-  #return C.decode(b,algorithm="nearest neighbor" )
+  reduit=(res.transpose().kernel().matrix().change_ring(ZZ).LLL())
+  return reduit.change_ring(GF(2)).change_ring(ZZ)[0,:]*matrix.ones(3*n,1)
+  
