@@ -1,46 +1,148 @@
 \documentclass{article}		%Petite taille de doc
-
+\usepackage{fullpage}
 \usepackage[francais]{babel}	%Doc fr
-\usepackage[T1]{fontenc}	%Caracteres accentues
-\usepackage[utf8]{inputenc}  
+\usepackage{todonotes}
 \usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{euler}
+\usepackage{fontspec}
+\setmainfont[Ligatures={Historic},Numbers=OldStyle]{Linux Libertine O}
 
+\newtheorem{defi}{Définition}
+\theoremstyle{definition}
+\newtheorem{theo}{Théorème}
+\theoremstyle{plain}
 \begin{document}
 \title{Learning Parities with Noise}
 \author{Thomas Bourgeat }
 \date\today
 \maketitle
 \section{Introduction au problème du LPN}
-
+De plus en plus d'applications cryptographiques ont besoin d'être embarquées 
+dans des dispositifs très économiques, voir jetables.  Le LPN est un candidat
+pour permettre de faire de la cryptograpie, classiquement de
+l'authentification, avec une puissance de calcul
+très limitée et une diversité d'opérations très réduite.
+Le standard AES est classiquement utilisé pour sa relative sécurité,
+cependant les implémentations sont assez couteuses, et si le LPN s'averait suffisament
+robuste, il serait une bonne alternative.
+\\\\
+Une fois un "bon" problème candidat à une application cryptographique, il
+faut construire des protocoles pour être capable de lui faire faire de la
+signature, du chiffrement ou de l'authentification. Ces protocoles ne
+doivent pas introduire de faiblesses dans le système utilisé : ils doivent
+être aussi difficile à casser que le problème initialement choisit est
+difficile à résoudre.
+Dans la suite nous  étudierons d'abord de l'authentification et du
+chiffrement. Enfin, nous donnerons une idée de la difficulté du
+problème du LPN par une vision des algorithmes actuels et plusieurs
+réductions à d'autres problèmes connus.    
 \subsection{Définition}
+Dans la suite on travaillera, sauf mention explicite du contraire, dans
+$GF(2)^n$, avec n la taille de clef. On note $Ber(\epsilon)$
+une loi de Bernoulli de paramètre $\epsilon$ : qui vaut 1 avec
+probabilité $1-\epsilon$. On rappelle que $\epsilon$ est petit : c'est à
+dire $\epsilon < \frac {1}{2}$.  
+\begin{defi}
+Soit $m \in \mathbb{N}, A \in \mathcal{M}_{m,n}(GF(2)), s \in GF(2)^n$ et
+$\nu \in GF(2)^m$ tel que $\nu_i \leftarrow Ber(\epsilon)$. On appelle
+problème du LPN le fait de retrouver $s$ à partir de $A,\epsilon,
+A.s+\nu$. 
+\end{defi}
+Géométriquement, on dispose de $m$ projection légèrement bruitées d'un vecteur secret sur m
+vecteurs données, et on veut retrouver le vecteur secret.
 \subsection{Spécificité du problème}
-\cite{Dam}
+On commence par remarquer que si le bruit est nul, il est très facile de
+résoudre le problème par un algorithme d'élimination de Gauss-Jordan.
 
 \section{Protocoles et preuves de sécurités}
 \subsection{Chiffrement}
 \subsection{Authentification clef publique}
+\cite{Dam}
 \subsection{Authentification clef privé}
 \subsubsection{HB}
 \paragraph{Sécurisé dans le modèle passif}
 \paragraph{Une attaque active}
-\subsubsection{HB\sharp}
+\subsubsection{HB sharp}
 \paragraph{Sécurisé dans le modèle actif}
 \paragraph{Une attaque man-in-the-middle}
 \subsubsection{Man-in-the-middle secure authentication schemes}
 \paragraph{Sécurisé dans le modèle man-in-the-middle}
 \paragraph{Une attaque concurrente}
 \paragraph{TODO: Réfléchir à une proposition de correction}
+
 \section{Modèles et cryptanalyses}
 Les protocoles présentés précedemment font tous l'hypothèse que le
-problème du LPN est difficile. 
-de l'art sur la résolution de ce problème. Tout d'abord nous allons
+problème du LPN est difficile. Pour vérifier la solidité de cette
+hypothèse,   nous allons
 présenter rapidement les deux grands modèles d'apprentissage SQ et PAC, ainsi que le
-résultat majeur de BKW de difficulté du LPN dans le modèle SQ. 
+résultat majeur de BKW de difficulté du LPN dans le modèle SQ. Ensuite
+nous verrons les algorithmes classiques, des paramètres caractéristiques,
+et des idées d'algorithmes ou d'améliorations testées durant le stage.
 
-\subsection{modèles}
-\subsubsection{Modèle SQ}
-
+\subsection{Modèles}
+Cette partie est inspirée des cours de Avrim
+Blum à la Carnegie Mellon University
 \subsubsection{Modèle PAC}
+Le modèle PAC, pour Probably Approximately Correct
+
+
+\begin{defi}
+On dit qu'une classe de fonction $\mathcal{C}$ booléennes de l'hypercube
+de dimension n est PAC-learnable si
+\todo[inline]{ICI} 
+\end{defi}
+\subsubsection{Modèle SQ}
+Le modèle SQ (pour Statistical Queries) propose un cadre pour étudier
+certains problèmes d'apprentissages. Le modèle se définit comme une
+interface restreinte entre l'algorithme d'apprentissage et la source de
+données.
+\\
+\\
+On dispose d'un oracle pouvant répondre à des questions de type "Quelle
+est la probabilité que l'instance x vérifie le prédicat P". L'oracle
+répond un intervalle de probabilité : c'est à dire "C'est entre
+$p - \tau$ et $p + \tau$". La question posée doit-être évaluable
+en temps polynomial.
+\\
+\begin{defi}
+On dit qu'une classe de fonction $\mathcal{C}$ booléennes de l'hypercube
+de dimension n est SQ-learnable sur la
+distribution $\mathcal{D}$ si il y a un algorithme $\mathcal{A}$
+tel que $\forall c \in \mathcal{C}, \epsilon>0$, $\mathcal{A}$ donne une
+$\epsilon$-approximation de c à partir de l'oracle SQ. Le temps
+d'execution d'algorithme, le nombre de queries et l'inverse de la plus
+petite tolérance $\tau$ doivent être polynomiaux en $n$ et en
+$\frac{1}{\epsilon}$. 
+\end{defi}
+\begin{defi}
+On dit qu'une classe de fonction est faiblement SQ-learnable, s'il existe
+un $\epsilon<\frac{1}{2}-\frac{1}{poly(n)}$ tel que la définition
+précèdente soit vérifiée.(Quantification existentielle au lieu
+d'universelle sur $\epsilon$) 
+\end{defi}
+Ce modèle, est en fait expressif, de nombreux problèmes sont
+"SQ-learnable" comme on va le voir immédiatement.
+\paragraph{Exemple de problèmes SQ-learnable}
+Soit $f$ une fonction de l'ensemble des fonctions qui sont des
+disjonctions de n variables booléennes. Par exemple
+$f(x)=x_1 \vee x_4 \vee \dots \vee x_{n-2}$.
+On cherche à l'apprendre. Pour ça on va faire les queries
+$P(f(x)=0\wedge x_i=1)$ pour tout $i\in [1,n]$ 
+\paragraph{SQ-learnable $\Rightarrow$ PAC-learnable}
+Etant donné un nombre important de samples, on peut simuler l'oracle. Il
+faut que la taille des samples soit grossièrement en
+$O(\frac{1}{\tau^2})$, pour obtenir un précision de $\tau$.
+  
+\paragraph{Théorème de non SQ-learnabilité}
+\begin{theo}
+\todo[inline]{Théorème}
+\end{theo}
+En conséquence ce dernier théorème nous donne une condition nécessaire
+pour trouver des algorithmes en temps sous-exponentiel : Il faut qu'ils
+utilisent des "opérations non SQ-like". Par exemple, des combinaisons
+linéaires.
 
 \subsection{Algorithmes pour attaquer le LPN}
 Il est necessaire de distinguer deux grandes classes
@@ -50,21 +152,106 @@ necessitant peu de queries (donc plus lents), puis ensuite nous verrons
 les algorithmes "BKW-like" necessitants plus de queries.
 
 
-\subsubsection{Peu de queries}
-\paragraph{Exhaustive}
-plusieurs types d'exhaustives \cite{Gol}
-\paragraph{Grigorescu} \cite{Indyk} \cite{Grigo}
-\paragraph{Valiant} \cite{Valiant}
-\paragraph{Dual : Contribution } Problème dual réduit à  un decoding
-problem ou un SVP. Permet de plugger les améliorations d'Antoine Joux et Alexander May. (new)
-\subparagraph{Decoding in $2^{n/20}$} \cite{Stern}
-\subparagraph{Via LLL}
-\paragraph{Générer plus de samples} Générer beaucoup de samples :
-Lyubashevski \cite{Vadim}
-\paragraph{Changer le modèle} \cite{Arora} Stratégie de se placer dans un modèle un peu différent avec Arora et Ge.Ou la résolution devient polynomial 
-\paragraph{Supprimer le bruit : Contribution}\label{SAT}
+\subsubsection{Avec peu de queries}
+\paragraph{Recherche exhaustive}
+Comme toujours en cryptographie, on peut chercher à effectuer une attaque
+par recherche exhaustive. Cependant ici plusieurs types de recherches sont
+possibles.
+\begin{itemize}
+\item On peut effectuer une recherche exhaustive naive sur le
+secret, et tester pour chaque secret si la proportion d'erreur est égale
+au bruit.
+\item On peut effectuer une recherche exhaustive sur le bruit, chercher
+la position des erreurs, car on sait qu'il y a peu d'erreurs, ensuite
+retrouver le secret associé par une élimination de Gauss, puis tester que
+ce secret est en effet bon. Le problème est que l'élimination de Gauss
+est assez couteuse : $O(n^3)$.
+\item \cite{Gol} fait moralement quelque chose d'équivalent, mais
+présenté de manière différente, ceci facilitant l'implémentation :
+$s=A^{-1}.(\nu+b)$, et sa recherche
+exhaustive sur s se fait en recherchant exhaustivement sur $\nu$ par poid
+de hamming croissant. Cette manière d'énumérer permet de tomber beaucoup
+%TODO: PRECISER
+plus rapidement sur la solution. En pratique pour des bruits suffisament
+faibles\footnote{0.01 pour n=768 par exemple}, c'est la meilleure attaque. Cette attaque a
+le mérite de se paralléliser très facilement. 
+\end{itemize} 
+
+\paragraph{Attaque par vecteurs corrélés}
+Le deuxième type d'attaque est asymptotiquement meilleur mais théorique.
+L'idée consiste à profiter 
+\begin{itemize}
+\item Grigo \cite{Indyk} \cite{Grigo}
+\item Valiant \cite{Valiant}
+\end{itemize}
+
+\paragraph{Attaque par dualité : Contribution }
+Il est assez classique que le problème du LPN soit relié à un problème de
+décodage : A est la matrice génératrice d'une code linéaire, et on
+cherche à déterminer quel est le mot code réel $As$ en partant du mot code
+bruité $As+\nu$, Autrement dit on cherche un vecteur court dans le noyau à
+gauche de A.
+\\
+ Ici nous décrivons une autre manière de voir ce
+problème, pour donner un sens à la matrice noyau à gauche de A. Cette
+méthode s'est trouvée être a posteriori une réduction à un décodage de
+code linéaire aléatoire.
+\\\\
+\label{SVP} 
+On remarque que lorsque l'on xor deux équations, la validité de
+l'équation xor est le xor de la validité des deux équations parentes.
+Alors on va construire un système sur la validité des équations : en
+effectuant des combinaisons qui lient les vecteurs de A, on va se ramener
+à des équations vraies : $0=0$ et des équations fausses : $0=1$, et ces
+équations sont issues d'un certain nombre de combinaison linéaires
+d'équations initiales, on sait lesquels. Ces combinaisons linéaires sont en
+fait le noyau à gauche de la matrice A, donc on peut en avoir une base en
+temps polynomial que l'on empacte en ligne dans une matrice, que l'on
+appelle $A^\dagger$. Bien entendu la dimension de cet espace est n,
+cependant le LPN devient maintenant : trouver une solution courte au
+système  $$A^\dagger.x=b$$ Autrement dit, trouver un nombre minimum
+d'équations fausses qui justifierait que les équations produites de type $0=0$ et
+$1=0$ soient respectivement vraies et fausses, \\\\
+Pour simplifier le problème, on peut simplement garder des équations initiales dont le b vaut 0. 
+L'avantage c'est qu'ainsi on cherche un
+vecteur court dans $ker(A^\dagger)$. 
+
+
+\subparagraph{Decoding in $2^{n/20}$} 
+Le decoding problem possède une litterature très étoffée de \cite{Stern}
+à \cite{Joux}. Il consiste à trouver le mot code à partir du syndrome (en
+le calculant avec le mot code bruité). Les améliorations finales dues à
+Joux et May donnent une complexité en $2^{n/20}$. Nous nous étendrons
+pas sur ces méthodes parce qu'elles relèvent d'un autre domaine classique
+et que nous ne pouvons pas facilement procéder à des tests (pas de
+decoding implémenté en Sage).
+
+\subparagraph{Via réduction de réseau} 
+La recherche d'un vecteur court fait penser à la réduction de réseau et
+donc à LLL. On sait en temps polynomial trouver d'assez bonnes bases dont
+le premier vecteur court est optimal d'après \cite{Phong} à un facteur expérimentalement
+$1.08^{\frac {n-1} 2}$ près.
+Cependant LLL ne fonctionne pas dans $GF(2)$\footnote{les réseaux dans un
+$GF(2)$ espace vectoriel étant moralement des sous-groupes de $GF(2)^n$
+donc des $GF(2)^k$, ce n'est pas très riche, }. Néanmoins, remarquons que
+si 
+ $x\in GF(2)^n$, où l'espace est métrique pour la distance de hamming, considéré comme un vecteur de $\mathbb{R}^n$ on a :
+$$HammingWeight(x)=\| x \| ^2$$  
+ Martin Albrecht propose alors qu'en pratique un LLL dans R donnera un
+vecteur court dont les composantes seront en valeur absolue plus petit
+que 1, que l'on pourra ensuite re-projeter sur $GF(2)$ qui donnera un bon
+vecteur court.
+\\
+On remarque dans tous les cas que $1.08^{\frac {n-1} {2}}$ devient
+rapidement trop grand, et donc qu'LLL n'assure plus du tout de trouver un
+vecteur optimal. Voir~\ref{Impsvp} pour des ordres de grandeurs.
+
+\paragraph{Changement de modèle} Dans \cite{Arora} Stratégie de se placer dans un modèle un peu différent avec Arora et Ge, Ou la résolution devient polynomial 
+
+\paragraph{Réduction de bruit : Contribution}\label{SAT}
 Le voir comme un système polynomial : (New) dont la résolution se fait
-soit en relinéarisant, soit via des bases de Groebner soit par
+soit en relinéarisant, soit via des bases de
+Groëbner soit par
 SAT-solving. 
 
 \subsubsection{Approche "légo"}
@@ -74,31 +261,180 @@ montrer cette unité, dans cette partie nous allons présenter différents
 blocs de bases, extraits d'algorithmes divers. Ensuite nous décrirons les
 différentes attaques comme des constructions avec ces blocs. Enfin nous
 présenterons notre propre vision.  
+
+\paragraph{Réduction de la taille du problème}
+Le premier bloc consiste en la réduction de la taille du problème, au
+prix d'une augmentation très significative du bruit.
+\\
+Pour celà, on prend nos samples, que l'on classe par groupes : sont dans
+le même groupe tous les éléments qui ont en communs les $b$ premiers bits.
+Ensuite dans chaque groupe on additionne un élément à tout les autres et
+on supprime cet élément, voir figure~\ref{bbkw}. Ainsi tous les éléments ont leurs $b$ premiers
+bits à zero. On recommence avec les $b$ suivant etc\dots
+On répète cette opération a fois. Et on a ainsi réduit le problème à une
+taille $n-ab$. En pratique pour faire les groupes on effectue simplement
+un tri sur les bits concernés.
+\begin{figure}
+$$\begin{pmatrix}
+\begin{cases}00\dots01 \\00\dots01\\ \vdots\\00\dots01 \end{cases} & \star \\
+\begin{cases} 00\dots10 \\00\dots10\\ \vdots\\00\dots10  \end{cases} & \star  \\
+\vdots & \vdots \\
+\begin{cases} 11\dots11 \\11\dots11\\ \vdots\\11\dots11  \end{cases} & \star 
+\end{pmatrix}$$
+\caption{Réduction de taille par groupements, 1ère étape}
+\label{bbkw}
+\end{figure}
+\\
+\\
+\\
+\cite{BKW} à l'origine de cette idée montrent qu'alors le biais final est
+de $(1-2\epsilon)^{2^a}$ et que la complexité en temps est de
+$a(a2^b+\frac {n} {(1-2\epsilon)^{2^a}})$.
+
+\paragraph{Réduction à un secret sparse.}
+\cite{Kirchner}, \cite{Bernstein} remarquent que le problème du LPN peut
+se réduire en temps polynomial a un problème du LPN avec un secret sparse
+ par la suite d'opérations suivantes:
+$$
+\begin{cases}
+A_1s+\nu_1=b_1\\
+A_2s+\nu_2=b_1\\
+\end{cases}
+$$
+$$
+\begin{cases}
+s=A_1^{-1}(b_1+\nu_1)\\
+A_2A_1^{-1}\nu_1+\nu_2=b_2+A_2A_1^{-1}\nu_1
+\end{cases}
+$$
+
+\paragraph{Stratégie de résolution finale}
+\subparagraph{Vote}
+On peut tout simplement espérer avoir les vecteurs de la base canonique
+en ligne dans notre matrice, et espérer qu'on les a tous un nombre
+suffisant de fois,
+pour ensuite voter à la majorité, la valeur du bit de secret
+correspondant. Il faut donc que le problème soit de petite dimension, et
+qu'on ait beaucoup de samples. 
+\subparagraph{FFT}
+On sait que la transformée de Fourier de notre fonction, qu'on appelle
+aussi transformée de Walsh-Hadamard, permet de trouver la meilleure
+approximation affine d'une fonction booléenne.\\\\
+ En effet : 
+\begin{theo}
+Les caractères irréductibles sont les $$\chi_y(x)=(-1)^{x.y},
+\forall y \in GF(2)^n.$$
+\end{theo}
+\begin{theo}
+Soit $\phi_y(x)=y.x=x_1.y_1+\dots+x_n.y_n$, $d$ la distance
+de hamming, $\mathcal{W}$ la transformée de Walsh, et f une fonction
+booléenne. Alors
+$$d(f,\phi_y)=2^{n-1}-\frac{1}{2}.max\{\mid\mathcal{W}(x\mapsto(-1)^{f(x)})(y)\mid| 
+y\in GF(2)^n \}$$
+\end{theo}
+\begin{proof}
+On a : \\\\
+\begin{tabular}{r c l}
+$\mathcal{W}(x\mapsto(-1)^{f(x)})(y)$&$=$&$\sum\limits_{x\in GF(2)^n}(-1)^{f(x)+x.y}$\\
+&$=$&$card\{x\in GF(2)^n | f(x)=x.y\}-card(x\in GF(2)^n | f(x)\not=x.y\}$\\
+&$=$&$2^n-2d(f,\phi_y)$
+\end{tabular}
+\end{proof}
+Donc il suffit de connaitre la position du coefficient de la transformée
+le plus grand, pour connaitre la meilleure approximation affine, et donc
+le secret. Cette procédure a été proposée par \cite{LF}.
+En pratique le calcul d'une transformée de Walsh-Hadamard coûte $2^n.n$,
+cependant \cite{Kirchner} propose de gagner un peu si le secret est
+sparse. 
+ 
+\subparagraph{Approche SFT}
+\label{SFT}
+Des algorithmes pour connaitre les coefficients de Fourier dominant d'une fonction d'un groupe
+abélien ont été proposés par \cite{Mansour} (pour les fonctions booléennes)
+puis  \cite{Akavia}.
+\\
+\cite{Vaudenay} décrit précisemment le fonctionnement de
+l'algorithme, qui est une recherche dichotomique par le biais d'un
+estimateur, que nous appellerons estimateur AKMV. Cet estimateur AKMV
+permet d'estimer la somme des coefficients de Fourier qui sont dans un
+voisinage (dont on peut controler la taille) d'un point donné. Ainsi
+l'algorithme de SFT consiste simplement a faire une recherche
+dichotomique, en éliminant à chaque fois les branches ne contenant pas un
+poid en coefficient de Fourier suffisant.
+\begin{defi}{Estimateur AKMV}
+ L'estimateur akmv en c de voisinage k évalue autour
+\end{defi}
+\todo[inline]{ICIII}
+\begin{theo}
+\end{theo}
+Ici cependant on ne peut pas évaluer notre fonction n'importe où, donc on
+ne peut pas effectuer l'algorithme de SFT. Cependant on peut calculer
+l'estimateur SFT pour tous les points, pour un voisinage réduit au
+centre.  Autrement dit on peut évaluer n'importe quel coefficient de
+Fourier en $O(n)$. Donc pour nous : on peut tester un secret en $O(n)$.
+Ce qui est mieux que le $O(n^2)$ traditionnel. \\
+En fait on pourra critiquer aisément le fait que cette amélioration est
+asymptotique, en pratique il y a un facteur entre $1000$ et $10000$ dans
+le O\footnote{Selon la précision désirée dans l'approximation du
+coefficient de Fourier}. 
+\subsubsection{BKW et LF}
 \begin{itemize}
-\item Réduction de la taille en augmentant le bruit
-\item Réduction à un secret sparse (Kirchner)
-\item Stratégie de résolution final
-\begin{itemize}
-\item Vote à la majorité
-\item FFT
-\item Recherche exhaustive via Vaudenay : approche SFT \cite{Akavia} \label{SFT}
-\end{itemize} 
+\item \cite{BKW} part avec $2^\frac{n}{log(n)}$ samples, et effectue une
+réduction de taille avec $a=log(n)$, $b = \frac{n}{log(n)}$.
+ Puis ensuite effectue un vote à la majorité. La complexité
+est de $O(2^{O(\frac {n} {log(n)})})$   
+\item \cite{LF} commence de la même manière et termine par une
+transformation de Walsh-Hadamard. La complexité est de
+$O(2^\frac{n}{log(n)})$.
 \end{itemize}
+\subsubsection{Kirchner et Bernstein}
+\cite{Bernstein}, \cite{Kirchner} proposent de faire toutes les étapes, et
+choisir les paramètres de manières optimale : vu qu'ils gagnent un peu
+dans la FFT lorsque le secret est très sparse, ils attendent que le
+secret soit très sparse (par exemple moins de $4$ bits à $1$). Et pour
+chaque essaie, ils effectuent quelques étapes de BKW (Pour ordre de
+grandeur, Kirchner propose
+pour $n=768$, $\epsilon=0.05$ de prendre $a=3$, $b=8$.)
+\\Le principal avantage de cette approche est la diminution de la
+quantité mémoire necessaire. Le nombre de queries ne diminue pas
+beaucoup, mais le plongement dans une étape de randomization permet
+d'économiser beaucoup de mémoire. C'est une amélioration significative
+puisque c'était le principal bottleneck dans BKW, où la mémoire coûtait
+aussi en $O(2^\frac{n}{log(n)})$ 
+\\\\
+Dans \cite{Bernstein}, ils propose de rajouter une structure
+d'anneau : le ring-LPN. Ceci permettant de diminuer le coup des produits
+matriciels.  
 
-\paragraph{BKW et LF}
-\cite{BKW}
-\cite{LF}
-
-\paragraph{Kirchner et Bernstein}
-\cite{Bernstein}
-\cite{Kirchner} Toucher deux mots de l'idée de Bernstein de rajouter une structure
-d'anneau pour réduire le cout de calcul du produit.
-
-\paragraph{Amélioration asymptotique par SFT}
+\subsubsection{Amélioration asymptotique par SFT : Contribution}
+\cite{Vaudenay}
+Si on garde la même trame que \cite{Kirchner} et \cite{Bernstein}, mais que l'on utilise notre
+capacité à tester un secret en $O(n)$ vu dans~\ref{SFT}, on peut alors faire une phase
+finale qui consiste à énumérer tous les mots de poid de hamming faible (les plus
+probables), et de les tester. Ainsi, si le secret possède $w$ bits à $1$
+dans ses $n-ab$ derniers bits,
+la complexité de la phase finale est de $\binom{n-ab}{w}.n$, \footnote{Comme dans
+\cite{LF}, \cite{BKW}, \cite{Kirchner}, \cite{Bernstein}, on ne s'attarde
+pas à établir la complexité pour retrouver les $ab$ premiers bits.}
 
 \paragraph{Optimisation des paramètres du précèdent.}
-
-
+Donc si on prend notre dernier algorithme, sa complexité générale est
+la suivante :
+$$\underbrace{(\sum_{i=0}^{w}\binom{n-a.b}{i}.\epsilon^i.(1-\epsilon)^{n-a.b-i})^{-1}}_{\text{Attente
+de secret w sparse}}.
+(\underbrace{n^3}_{\text{Réduction sparse}} +
+\underbrace{a.(a.2^b+\frac{n-a.b}{(1-2.\epsilon)^{2^a}})
+}_{\text{Réduction BKW}} + \underbrace{\sum_{i=0}^w \binom{n-a.b}{i}.(n-a.b)}_{\text{Rétrouver solution par SFT}} )$$ 
+Cette complexité est en fait simplifiée : elle est donnée ici en O, alors
+que normalement il y a des constantes qui dépendent très fortement de
+l'implémentation\footnote{Notamment des facteurs 1/32 ou 1/64 par
+endroit si on fait des représentation compactes avec des entiers}. On sent
+donc bien qu'il faut optimiser en a, b, w, à $\epsilon$ et n fixés. Pour
+celà une étude analytique semble très délicate\footnote{Surtout qu'en
+crypto les paramètres sont assez petits donc il ne fait aucun sens de
+faire une étude asymptotique}. En pratique, l'espace des paramètres à
+optimiser étant fini un petit script OCaml permet de donner les valeurs
+optimales. 
 \section{Implémentation}
 \subsection{C}
 \subsubsection{Éléments de bases pour LPN}
@@ -139,14 +475,15 @@ l'instance du LPN construite par le maitre à toutes les machines de la
 grappe. En pratique le calcul a été fait sur 8 machines de
 l'ens\footnote{The super-new spice machines}(2x Intel Xeon E5649 @
 2.53GHz).  
-Tableau de performance : TODO
+Tableau de performance :\todo[inline]{TODO tableauperf}
 
 \subsection{Sage : c'est le bien}
-Une fois compilé (9h tout de même...), Sage est particulièrement efficace
+Une fois compilé (9h tout de même\dots), Sage est particulièrement efficace
 pour tester rapidement des idées : je pense à un facteur de compression
+sur la taille du code
 entre 10 et 100. De plus Sage
 implémente plus ou moins l'état de l'art des algorithmes classiques : multiplication
-matricielle, SAT-solver etc...  
+matricielle, SAT-solver etc\dots  
 
 
 \subsubsection{Systèmes polynomiaux}
@@ -155,21 +492,21 @@ Le but fut d'implémenter ce que nous avons proposé en~\ref{SAT}
 En Sage, on déclare l'anneau dans lequel on travail, la méthode de
 résolution du système et c'est fini. Autrement dit l'essentiel du travail
 est de générer les équations : de traiter les données. Etant donné que la
-complexité de SAT et Groebner est très mal connue, le but était
+complexité de SAT et Groëbner est très mal connue, le but était
 uniquement d'effectuer un test, pour savoir si on se trouvait dans une
 zone ou les méthodes usuelles se "comportent bien", ou pas\footnote{Je
 présente ici chronologiquement ce que j'ai compris.}.
 J'ai pris une instance du LPN de taille 32, générée en C, et ensuite j'ai
-traitée ces données via OCaml pour les formater pour Sage\footnote{Il
+traité ces données via OCaml pour les formater pour Sage\footnote{Il
 était possible de tout faire directement en Sage, mais je n'avais pas
 fait de OCaml depuis plusieurs semaines!}. Les équations polynomiales
-étaient toutes de degrès 2 : produit des équations $2*i$ et $2*i+1$
+étaient toutes de degrès 2 : produit des équations $2.i$ et $2.i+1$
 linéaire du problème LPN initial.
-\paragraph{Résolution via Groebner}
+\paragraph{Résolution via Groëbner}
 Exécuté sur ma machine plusieurs heures, ça n'a pas terminé. Peut-etre 
 que le grand nombre de variables dans chaque équation est la cause de
 l'echec de la résolution via
-bases de Groebner.
+bases de Groëbner.
 \paragraph{Résolution via SAT}
 Via SAT, l'instance a été résolue en une dizaine de minutes. Ceci est
 assez lent, à peine mieux qu'une recherche exhaustive. 
@@ -185,26 +522,78 @@ rapport $\alpha=\frac {\sharp Clauses}{\sharp Variables}$ devient plus grand.
 Or, \cite{Dubois} étudie que lorsque le nombre de variables tend vers
 l'infini, presque toutes (au sens probabiliste) les
 instances avec $\alpha > 4.506$ sont insatisfiables. Ce sont des
-"hard-SAT".\footnote{Beaucoup de cycles dans le graphe de représentation}
+"hard-SAT"\footnote{Beaucoup de cycles dans le graphe de représentation}.
 
 Ces lectures à posteriori\footnote{Toujours la difficulté de savoir s'il
 est plus rapide d'implémenter pour tester, ou de trouver une biblio sur
 le sujet} justifient que cette approche ne passera pas pour
 des paramètres plus gros. 
 
-\subsubsection{Réduction du LPN au Short Vector Problem}
+\subsubsection{Réduction du LPN au Short Vector Problem}\label{Impsvp}
+En \ref{SVP} on a vu une proposition de réduction du LPN au SVP dans un
+sous-espace vectoriel du $\mathbb{Z}/2\mathbb{Z}$ espace vectoriel
+$(\mathbb{Z}/2\mathbb{Z})^n$. L'implémentation choisie est celle avec une
+réduction de réseau pour trouver le plus court vecteur. Cependant LLL
+est fait pour des vecteurs dans réels, cependant on peut considérer les
+vecteurs de $(\mathbb{Z}/2\mathbb{Z})^n$ comme des vecteurs réels,
+effectuer LLL, qui ne fait que des combinaisons linéaires, puis se
+replonger dans $GF(2)^n$.
+\\ 
+On remarque qu'il y a une relative corrélation entre un vecteur court de
+$GF(2)^n$ avec la distance de hamming, et avec la norme 2. De plus
+expérimentalement, LLL donne des vecteurs à valeur très majoritairement
+dans $\{-1,0,1\}$, donc cette méthode\footnote{Piquée à Martin Albrecht}
+est expérimentalement justifiée.
+\\
+Le principale bottleneck de cette méthode est le facteur d'approximation
+de LLL, qui trouve un plus court vecteur à un facteur au plus 
+$(1.08)^{\frac {n-1} {2}}$. Ainsi très rapidement lorsque la
+dimension augmente, ou que le bruit augmente trop, LLL n'assure plus
+de trouver
+un vecteur suffisament court, et bien que l'algorithme soit
+très rapide, il n'est plus correct.
+En effet il faut que : $$1.08^{\frac {n-1} {2}}HammingWeight(\nu) <<1/2
+$$ 
+ En pratique il faut alors l'éxecuter
+de nombreuses fois pour trouver le bruit.On 
+peut le voir dans le tableau de performance ci-dessous. Les tests sont
+réalisés sur ma machine personnelle (AMD V120 @ 2.2GHz)
+\\
+\begin{figure}
+\caption{Complexité en temps pour essayer une instance}
+\begin{center}
+\begin{tabular}{|c |c | c | c | c | }
+\hline
+   & 32 & 64 & 96 & 128 \\
+\hline
+ 0.01  & &4 & 5 & 6 \\
+\hline
+  0.05 & &7 & 8 & 9 \\
+\hline
+ 0.1& & & &\\
+ \hline
+ \end{tabular}
+\end{center}
+\end{figure}
 
+\begin{figure}
+\caption{Nombre d'instances necessaires avant réussite}
+\begin{center}
+\begin{tabular}{|c |c | c | c | c | }
+\hline
+   & 32 & 64 & 96 & 128 \\
+\hline
+ 0.01  & &4 & 5 & 6 \\
+\hline
+  0.05 & &7 & 8 & 9 \\
+\hline
+ 0.1 & & & & \\
+ \hline
+ \end{tabular}
+\end{center}
+\end{figure}
 
-\section{Conclusion}
-
-\begin{itemize}
-\item Vaudenay *2
-\item Shallue??
-\item New generic algorithms for hard knapsacks Joux
-\item Decoding random linear code 1+1 en n/20 May/Joux
-\end{itemize}
-
-\bibliographystyle{plain}
+\bibliographystyle{alpha}
 \bibliography{biblio}
 \end{document}
 
