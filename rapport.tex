@@ -50,16 +50,37 @@ $\nu \in GF(2)^m$ tel que $\nu_i \leftarrow Ber(\epsilon)$. On appelle
 problème du LPN le fait de retrouver $s$ à partir de $A,\epsilon,
 A.s+\nu$. 
 \end{defi}
-Géométriquement, on dispose de $m$ projection légèrement bruitées d'un vecteur secret sur m
+Géométriquement, on dispose de $m$ projections légèrement bruitées d'un vecteur secret sur m
 vecteurs données, et on veut retrouver le vecteur secret.
 \subsection{Spécificité du problème}
 On commence par remarquer que si le bruit est nul, il est très facile de
 résoudre le problème par un algorithme d'élimination de Gauss-Jordan.
+Donc certaines instances sont très faciles. De même un structure
+excessive sur la matrice A rend le problème simple : si chaque vecteur de
+la base canonique est mis en ligne dans A, chacun un nombre de fois
+suffisant, on peut alors résoudre le problème par un simple vote à la 
+majorité.
+\\
+Pour faire un parallèle on peut penser au problème de factorisation d'un
+nombre comme produit de deux premiers : la difficulté d'une instance à
+l'autre varie beaucoup, ainsi il n'est pas immédiat de choisir une instance
+que l'on sait difficile à résoudre. 
+\\
+On verra dans la suite que le LPN est relié aux problèmes de vecteurs
+courts dans les réseaux ainsi qu'au problème de decodage. \cite{Alekh}
+propose un cadre pour voir autour de quels problèmes certainement
+difficile gravite le LPN, notamment il propose un cryptosystème autour du
+lpn qui est intractable sous l'hypothèse d'une conjecture assez
+plausible. Cependant on l'aura compris, on ne sait pas si le LPN est
+difficile.
 
 \section{Protocoles et preuves de sécurités}
 \subsection{Chiffrement}
-\subsection{Authentification clef publique}
-\cite{Dam}
+\subsubsection{Asymétrique}
+\cite{Alekh} faisabilité : \cite{Dam} 
+\subsubsection{Symétrique}
+
+\subsection{Authentification clef publique : contribution }
 \subsection{Authentification clef privé}
 \subsubsection{HB}
 \paragraph{Sécurisé dans le modèle passif}
@@ -85,13 +106,19 @@ et des idées d'algorithmes ou d'améliorations testées durant le stage.
 Cette partie est inspirée des cours de Avrim
 Blum à la Carnegie Mellon University
 \subsubsection{Modèle PAC}
-Le modèle PAC, pour Probably Approximately Correct
-
-
+Le modèle PAC, pour Probably Approximately Correct, est un modèle
+d'apprentissage ici présenté dans le cadre de la
+classification : dans le cadre du LPN, la classe d'un vecteur $a$ est
+$a.s$.
 \begin{defi}
 On dit qu'une classe de fonction $\mathcal{C}$ booléennes de l'hypercube
-de dimension n est PAC-learnable si
-\todo[inline]{ICI} 
+de dimension n est PAC-learnable si pour tout $i\in\mathcal{C}$, étant donné un oracle qui génère des
+entrées
+selon une loi $\mathcal{D}$ et qui donne une classification correct avec une
+certaine probabilité $1-\eta$, $\forall
+\delta<\frac{1}{2},\epsilon<\frac{1}{2}$ il existe un algorithme
+$\mathcal{A}$ tel qu'avec probabilité au moins $1-\delta$ l'algorithme donne une
+$\epsilon$-approximation de la fonction cible sur $\mathcal{D}$. 
 \end{defi}
 \subsubsection{Modèle SQ}
 Le modèle SQ (pour Statistical Queries) propose un cadre pour étudier
@@ -129,16 +156,47 @@ Soit $f$ une fonction de l'ensemble des fonctions qui sont des
 disjonctions de n variables booléennes. Par exemple
 $f(x)=x_1 \vee x_4 \vee \dots \vee x_{n-2}$.
 On cherche à l'apprendre. Pour ça on va faire les queries
-$P(f(x)=0\wedge x_i=1)$ pour tout $i\in [1,n]$ 
+$P(f(x)=0\wedge x_i=1)$ pour tout $i\in [1,n]$. Si la i-ème réponse est
+suffisament petite : plus petite que $\frac{\epsilon}{n}$, alors $x_i$
+n'est pas dans l'expression de f.  
 \paragraph{SQ-learnable $\Rightarrow$ PAC-learnable}
 Etant donné un nombre important de samples, on peut simuler l'oracle. Il
 faut que la taille des samples soit grossièrement en
 $O(\frac{1}{\tau^2})$, pour obtenir un précision de $\tau$.
   
 \paragraph{Théorème de non SQ-learnabilité}
+\cite{Blum} propose une caractérisation des problèmes SQ-learnable, que
+l'on présente ici.
+\begin{defi}
+Soit $\mathcal{F}$ une classe de fonctions booléennes sur $GF(2)^n$, et $D$ une
+distribution sur $GF(2)^n$.
+On appelle dimension SQ de $\mathcal{F}$ le cardinal
+du plus grand ensemble de fonctions $f_1,\dots, f_d$ telles que 
+$$\forall i \not= j, |Pr_D(f_i=f_j)-Pr_D(f_i \not= f_j)|\leq \frac{1}{d^3} $$
+\end{defi}
 \begin{theo}
-\todo[inline]{Théorème}
+Soit $\mathcal{F}$ une classe de fonctions booléennes et $\mathcal{D}$
+une distribution telle que $SQ_{dim}(\mathcal{F},\mathcal{D})\geq d \geq
+16$. Alors si toutes les queries sont faites avec tolérance
+$\tau\geq\frac{1}{d^{\frac{1}{3}}}$, au moins $d^{\frac{1}{3}}/2$ queries
+sont necessaires pour apprendre $\mathcal{F}$ avec une erreur inférieur a
+$\frac{1}{2}-\frac{1}{d^3}$ 
 \end{theo}
+\begin{theo}
+L'ensemble des fonctions booléennes sur $GF(2)^n$ n'est pas
+SQ-learnable.
+\end{theo}
+\begin{proof}
+En effet la dimension SQ de l'ensemble des fonctions affines booléennes sur
+$GF(2)^n$ n'est pas polynomiale :
+\\\\
+On prends $D$ la distribution uniforme, alors 
+$\forall a,a'\in GF(2)^n,
+Pr_D(a.x=a'.x)=\frac{1}{2}$,$Pr_D(a.x\not=a'.x)=\frac{1}{2}$
+ De plus on ne peut pas faire des queries avec
+des tolérances inférieures à celles de la proposition, en temps
+polynomial.
+\end{proof}
 En conséquence ce dernier théorème nous donne une condition nécessaire
 pour trouver des algorithmes en temps sous-exponentiel : Il faut qu'ils
 utilisent des "opérations non SQ-like". Par exemple, des combinaisons
@@ -180,10 +238,31 @@ le mérite de se paralléliser très facilement.
 \paragraph{Attaque par vecteurs corrélés}
 Le deuxième type d'attaque est asymptotiquement meilleur mais théorique.
 L'idée consiste à profiter 
-\begin{itemize}
-\item Grigo \cite{Indyk} \cite{Grigo}
-\item Valiant \cite{Valiant}
-\end{itemize}
+\subparagraph{Amélioration de \cite{Grigo}}
+\begin{theo}\cite{Indyk}
+      \\ Etant donné N points de l'hypercube de dimension d, on peut
+trouver une paire de points $\delta$-proche, avec $\delta \leq
+\epsilon.\rho$ où $\epsilon$ est la plus petite distance entre deux
+ des N points. Ceci est fait en $O(d.N^{1+\frac{1}{\rho^2}+o(1)})$
+        \end{theo} 
+  L'approche consiste à supposer que le secret est sparse de poid de
+hamming r
+donné.\footnote{Plus tard on verra qu'en fait cette hypothèse est vide,
+et qu'on peut réduire un problème LPN à un sparse LPN}
+   L'idée de \cite{Grigo} est de construire tous les secrets de poid de
+hamming $\frac{r}{2}$, d'évaluer 
+      \begin{theo} Il existe un algorithme qui résoud un LPN r-sparse en
+effectuant
+$\frac{r.log(\frac{n}{\delta}).\omega(1)]}{\epsilon^2.(1-2.\eta)^2}$
+queries en un temps
+$$\frac{log(\frac{1}{\delta}}).n^{(1+(2.\eta)^2+o(1))r/2}{(1-2\eta)^2}$$
+      \end{theo}
+      \begin{proof}
+      \end{proof}
+
+\subparagraph{Amelioration de \cite{Valiant}} \cite{Valiant} propose une attaque qui utilise le gain de la
+multiplication matricielle rapide.Son attaque ne fait pas intervenir le
+bruit dans l'exposant
 
 \paragraph{Attaque par dualité : Contribution }
 Il est assez classique que le problème du LPN soit relié à un problème de
@@ -246,13 +325,29 @@ On remarque dans tous les cas que $1.08^{\frac {n-1} {2}}$ devient
 rapidement trop grand, et donc qu'LLL n'assure plus du tout de trouver un
 vecteur optimal. Voir~\ref{Impsvp} pour des ordres de grandeurs.
 
-\paragraph{Changement de modèle} Dans \cite{Arora} Stratégie de se placer dans un modèle un peu différent avec Arora et Ge, Ou la résolution devient polynomial 
-
-\paragraph{Réduction de bruit : Contribution}\label{SAT}
-Le voir comme un système polynomial : (New) dont la résolution se fait
-soit en relinéarisant, soit via des bases de
-Groëbner soit par
-SAT-solving. 
+\paragraph{Changement de modèle} Dans \cite{Arora} les auteurs constatent
+que lorsque l'on change légèrement le modèle, on peut trouver des
+solutions polynomiales. Plutôt que de tirer les samples au coup par coup,
+ils proposent d'avoir un "bouton", qui permet d'obtenir m samples dont on
+est sur qu'une fraction $\tau$ est bonne.
+\todo[inline]{Ici}
+\paragraph{Réduction de bruit : Contribution} \label{SAT} 
+Jusqu'a présent nous n'avons pas encore vu de méthodes pour réduire le
+bruit du LPN. Dans ce but on peut faire le OU de disons k équations, et
+alors on obtient une équation juste avec très très grande probabilité.
+Ainsi en augmentant le degrès des équations, on diminue le bruit à
+vitesse exponentielle :
+ $$P(\bar\nu_1 \vee \bar\nu_2 \vee \dots \vee \bar\nu_k)=(\epsilon)^k$$
+\\\\
+Cette stratégie génère donc un système d'équations polynomiales. Pour le
+résoudre on peut envisager plusieurs solutions :
+\begin{itemize}
+\item Bases de Grobner
+\item Relinéarisation : on pose tout les monomes présents comme des
+variables
+\item SAT-solving
+\end{itemize}
+Voir~\ref{ISAT} pour l'implémentation et les résultats.
 
 \subsubsection{Approche "légo"}
 Il s'avère que les algorithmes  necessitant un grand nombre
@@ -361,15 +456,39 @@ voisinage (dont on peut controler la taille) d'un point donné. Ainsi
 l'algorithme de SFT consiste simplement a faire une recherche
 dichotomique, en éliminant à chaque fois les branches ne contenant pas un
 poid en coefficient de Fourier suffisant.
-\begin{defi}{Estimateur AKMV}
- L'estimateur akmv en c de voisinage k évalue autour
+\begin{defi}
+ En dimension n, l'estimateur akmv en h de voisinage k vaut
+$$akmv(h,k)=\frac{2^{2.n}}{N}.\sum_{i=0}^{n}
+f(a_i+b_i).f(a_i+c_i).(-1)^{(b_i+c_i).h}$$
+où 
+\begin{itemize}
+\item $a_i$ sont des mots quelquonques de n bits.
+\item $N$ est indépendante de la dimension, permet de dimensionner la
+finesse d'évaluation des coefficients.
+\item $c_i,b_i$ sont des mots quelquonques de n bits possédants leur k derniers bits à
+0.
+\end{itemize}
 \end{defi}
-\todo[inline]{ICIII}
-\begin{theo}
+
+\begin{theo}\cite{Vaudenay}
+$akmv(c,\delta)$ est un bon estimateur de la somme des carrés modules des coefficients
+de fourier :
+$$\sum_{\alpha\in I(c,\delta)} |\hat{f}(\alpha)|^2 - \gamma.2^{2.k}\leq
+2^{2.k}.akmv(c,\delta)\leq
+\sum_{\alpha\in I(c,\delta)} |\hat{f}(\alpha)|^2 +  \gamma.2^{2.k}$$
+\begin{itemize}
+\item $I(c,\delta)$ est l'ensemble des points qui possèdent les $\delta$
+premières coordonnées de c, et des coordonnées suivantes quelquonques.
+\item $\gamma=\frac{L_2(\hat{f})^2}{18.2.2^{2.k}}$
+\item Probabilité d'echec plus petite que $2.\epsilon'$ 
+\item $N=2.\gamma^{-2}.ln(\frac{1}{\epsilon'})$
+\item Erreur bornée par $\frac{1}{18.2}.L_2(\hat{f})^2$ 
+\end{itemize} 
 \end{theo}
-Ici cependant on ne peut pas évaluer notre fonction n'importe où, donc on
-ne peut pas effectuer l'algorithme de SFT. Cependant on peut calculer
-l'estimateur SFT pour tous les points, pour un voisinage réduit au
+
+Dans le LPN on ne peut pas évaluer notre fonction n'importe où, donc on
+ne peut pas effectuer l'algorithme de SFT \cite{Akavia}. Cependant on peut calculer
+l'estimateur AKMV pour tous les points, pour un voisinage réduit au
 centre.  Autrement dit on peut évaluer n'importe quel coefficient de
 Fourier en $O(n)$. Donc pour nous : on peut tester un secret en $O(n)$.
 Ce qui est mieux que le $O(n^2)$ traditionnel. \\
@@ -475,7 +594,27 @@ l'instance du LPN construite par le maitre à toutes les machines de la
 grappe. En pratique le calcul a été fait sur 8 machines de
 l'ens\footnote{The super-new spice machines}(2x Intel Xeon E5649 @
 2.53GHz).  
-Tableau de performance :\todo[inline]{TODO tableauperf}
+\begin{figure}
+\caption{Temps d'exécution en dimension n avec un secret k-sparse}
+\begin{center}
+\begin{tabular}{|c |c | c | c | c |c|c| }
+\hline
+   kn & 32 & 64 & 128 & 256 & 512 & 768 \\
+\hline
+ 2  & &4 & 5 & 6 & &\\
+\hline
+  3 & &7 & 8 & 9 & &\\
+\hline
+ 4 & & & & & & \\
+ \hline
+5 & & & & & & \\
+ \hline
+6 & & & & & & \\
+\hline 
+\end{tabular}
+\end{center}
+\end{figure}
+
 
 \subsection{Sage : c'est le bien}
 Une fois compilé (9h tout de même\dots), Sage est particulièrement efficace
@@ -486,7 +625,7 @@ implémente plus ou moins l'état de l'art des algorithmes classiques : multipli
 matricielle, SAT-solver etc\dots  
 
 
-\subsubsection{Systèmes polynomiaux}
+\subsubsection{Systèmes polynomiaux}\label{ISAT}
 Le but fut d'implémenter ce que nous avons proposé en~\ref{SAT}
 \\\\
 En Sage, on déclare l'anneau dans lequel on travail, la méthode de
@@ -552,7 +691,7 @@ dimension augmente, ou que le bruit augmente trop, LLL n'assure plus
 de trouver
 un vecteur suffisament court, et bien que l'algorithme soit
 très rapide, il n'est plus correct.
-En effet il faut que : $$1.08^{\frac {n-1} {2}}HammingWeight(\nu) <<1/2
+En effet il faut que : $$1.08^{\frac {n-1} {2}}HammingWeight(\nu)\ll1/2
 $$ 
  En pratique il faut alors l'éxecuter
 de nombreuses fois pour trouver le bruit.On 
