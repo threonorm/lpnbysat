@@ -2,6 +2,8 @@
 \usepackage{fullpage}
 \usepackage[francais]{babel}	%Doc fr
 \usepackage{todonotes}
+\usepackage{tikz}
+\usepackage{framed}
 \usepackage{amsfonts}
 \usepackage{amsthm}
 \usepackage{amsmath}
@@ -13,19 +15,26 @@
 \theoremstyle{definition}
 \newtheorem{theo}{Théorème}
 \theoremstyle{plain}
+\newtheorem{intui}{Ébauche de preuve}
+\theoremstyle{plain}
+\newtheorem{coro}{Corollaire}
+\theoremstyle{plain}
+
+\newtheorem{remark}{Remarque}
+\theoremstyle{plain}
+
 \begin{document}
 \title{Learning Parities with Noise}
-\author{Thomas Bourgeat }
+\author{Thomas Bourgeat}
 \date\today
 \maketitle
 \section{Introduction au problème du LPN}
-De plus en plus d'applications cryptographiques ont besoin d'être embarquées 
-dans des dispositifs très économiques, voir jetables.  Le LPN est un candidat
-pour permettre de faire de la cryptograpie, classiquement de
+De plus en plus d'applications cryptographiques ont besoin d'être embarquées dans des dispositifs très économiques, voir jetables. Le LPN est un candidat
+pour permettre de faire de la cryptographie, classiquement de
 l'authentification, avec une puissance de calcul
 très limitée et une diversité d'opérations très réduite.
 Le standard AES est classiquement utilisé pour sa relative sécurité,
-cependant les implémentations sont assez couteuses, et si le LPN s'averait suffisament
+cependant les implantations sont assez coûteuses, et si le LPN s'avérait suffisamment
 robuste, il serait une bonne alternative.
 \\\\
 Une fois un "bon" problème candidat à une application cryptographique, il
@@ -34,28 +43,32 @@ signature, du chiffrement ou de l'authentification. Ces protocoles ne
 doivent pas introduire de faiblesses dans le système utilisé : ils doivent
 être aussi difficile à casser que le problème initialement choisit est
 difficile à résoudre.
-Dans la suite nous  étudierons d'abord de l'authentification et du
+Dans la suite nous étudierons d'abord de l'authentification et du
 chiffrement. Enfin, nous donnerons une idée de la difficulté du
 problème du LPN par une vision des algorithmes actuels et plusieurs
-réductions à d'autres problèmes connus.    
+réductions à d'autres problèmes connus.
+\paragraph{Notation et mise en forme}
+Dans ce document certains résultats sont isolés. Ce choix a été fait pour
+mettre en évidence certains résultats assez remarquables. Notamment
+certain de ces résultats
+se trouvent parfois dans un contexte plus général que le LPN. 
 \subsection{Définition}
 Dans la suite on travaillera, sauf mention explicite du contraire, dans
 $GF(2)^n$, avec n la taille de clef. On note $Ber(\epsilon)$
 une loi de Bernoulli de paramètre $\epsilon$ : qui vaut 1 avec
-probabilité $1-\epsilon$. On rappelle que $\epsilon$ est petit : c'est à
-dire $\epsilon < \frac {1}{2}$.  
+probabilité $1-\epsilon$. On rappelle que $\epsilon$ est petit : c'est-à-dire $\epsilon < \frac {1}{2}$.  
 \begin{defi}
-Soit $m \in \mathbb{N}, A \in \mathcal{M}_{m,n}(GF(2)), s \in GF(2)^n$ et
+Soit $m \in \mathbb{N}, A \in \mathcal{M}_{m, n}(GF(2)), s \in GF(2)^n$ et
 $\nu \in GF(2)^m$ tel que $\nu_i \leftarrow Ber(\epsilon)$. On appelle
-problème du LPN le fait de retrouver $s$ à partir de $A,\epsilon,
+problème du LPN le fait de retrouver $s$ à partir de $A, \epsilon,
 A.s+\nu$. 
 \end{defi}
 Géométriquement, on dispose de $m$ projections légèrement bruitées d'un vecteur secret sur m
-vecteurs données, et on veut retrouver le vecteur secret.
+vecteurs donnés, et on veut retrouver le vecteur secret.
 \subsection{Spécificité du problème}
 On commence par remarquer que si le bruit est nul, il est très facile de
 résoudre le problème par un algorithme d'élimination de Gauss-Jordan.
-Donc certaines instances sont très faciles. De même un structure
+Donc certaines instances sont très faciles. De même une structure
 excessive sur la matrice A rend le problème simple : si chaque vecteur de
 la base canonique est mis en ligne dans A, chacun un nombre de fois
 suffisant, on peut alors résoudre le problème par un simple vote à la 
@@ -66,35 +79,214 @@ nombre comme produit de deux premiers : la difficulté d'une instance à
 l'autre varie beaucoup, ainsi il n'est pas immédiat de choisir une instance
 que l'on sait difficile à résoudre. 
 \\
-On verra dans la suite que le LPN est relié aux problèmes de vecteurs
-courts dans les réseaux ainsi qu'au problème de decodage. \cite{Alekh}
-propose un cadre pour voir autour de quels problèmes certainement
-difficile gravite le LPN, notamment il propose un cryptosystème autour du
-lpn qui est intractable sous l'hypothèse d'une conjecture assez
-plausible. Cependant on l'aura compris, on ne sait pas si le LPN est
-difficile.
+Bien que la difficulté du LPN ne soit pas connu, on verra un ensemble de
+problèmes auquel il est relié. Ces problèmes ont des complexités mieux
+connues et permettent de justifier l'avis assez partagé de la communauté
+que c'est un problème difficile.
 
 \section{Protocoles et preuves de sécurités}
 \subsection{Chiffrement}
 \subsubsection{Asymétrique}
-\cite{Alekh} faisabilité : \cite{Dam} 
+\cite{Alekh}  propose deux cryptosystèmes à clef publique. Ils sont tous
+les deux basés sur des conjectures d'indistinguabilité.
+\paragraph{Cryptosystème 1}
+Soient $k=n^{1/2-\epsilon}, m=2.n$. Ce premier cryptosystème ne chiffre
+qu'un seul bit par étape. La procédure de génération de clef est comme
+suit :
+\begin{enumerate}
+\item Générer une matrice $m\times n$ de $GF(2)$ aléatoire.
+(les coefficients sont des $Ber_{1/2}$)
+\item Générer un vecteur aléatoire de bruit $\nu$, de poids de hamming k,
+et construire $b=A.x+e$ où $x$ suit une loi uniforme.
+\item La clef est publique est alors $(A,b)$ et la clef privée
+$(A,b,\nu)$
+\end{enumerate}
+\subparagraph{Chiffrement}
+
+\begin{itemize}
+\item Si on veut chiffrer 0, envoyer un vecteur $\xi$ tiré selon une loi
+uniforme
+\item Si on veut chiffrer 1, envoyer $\xi=y+e'$ où $e'$ est un mot aléatoire
+de poids k, et $y\in Ker((b|A)^t)$
+\end{itemize}
+
+\subparagraph{Déchiffrement}
+On calcul $\delta= e^t.\xi$, si $\delta=0$ on déchiffre $0$, sinon on
+déchiffre $1$.
+
+
+\begin{remark}
+Ce cryptosystème se repose sur le LPN d'une manière un peu différente de
+tout ce qu'on verra par la suite. Si on suppose que l'on connait le
+nombre d'erreurs par authentification (groupe de m samples), il existe une attaque simple du
+LPN : on regarde la parité de ce nombre, on xor toutes les m équations
+entre elles, si il y a un nombre pair d'erreur, on ne change pas
+l'équation finale, sinon on la flip. Dans les deux cas on est ainsi sur
+d'avoir généré une équation juste. En répétant l'opération environ n
+fois, on aurait résolu le LPN. Autrement dit, la connaissance de la
+parité du nombre d'erreurs dans le LPN est une information très
+importante. Alors que dans ce cryptosystème, elle est donnée.
+\end{remark}
+
+\begin{theo}
+Ce cryptosystème est correct et sécurisé sous l'hypothèse (conjecture 3.
+de \cite{Alekh}) que l'ensemble
+des vecteurs à distance k d'un noyau d'une matrice aléatoire et la loi
+uniforme sont indistinguables. 
+\end{theo}
+\begin{proof}
+\end{proof}
+\paragraph{Cryptosystème 2}
+
+\paragraph{Faisabilité (à titre informatif)}
+\cite{Dam} propose une comparaison entre une implémentation de RSA 1024
+bits et un LPN $n=768,\eta=0.015$. Les performances du LPN sont moins
+bonnes, entre un facteur 10 et un facteur 100. Cependant \cite{Dam} dit
+que ce n'est pas redhibitoire. Néanmoins, les paramètres choisis dans
+\cite{Dam} sont criticables. En effet ils ont choisi de se baser sur
+\cite{LF} qui propose un algorithme performant pour des bruits
+importants. Le choix de $\eta=0.015$ donne l'avantage a des algorithmes
+par recherche exhaustive type \cite{Valiant},\cite{Grigo} ou même plus
+concret \cite{Gol}. Ainsi la sécurité annonçée n'est pas du tout de
+$2^{80}$.
 \subsubsection{Symétrique}
 
-\subsection{Authentification clef publique : contribution }
+
+
+
+
 \subsection{Authentification clef privé}
+Le LPN est souvent proposé pour faire de l'authentification et la majorité
+de la littérature traite de l'authentification. Dans la suite on appelle
+Tag le dispositif qui souhaite s'authentifier, et Reader celui auprès de qui le
+Tag essaie de s'authentifier.
+
+
 \subsubsection{HB}
+L'exemple le plus simple consiste à choisir le squelette suivant, très
+classique, d'authentification :
+\begin{enumerate}
+\item On détermine un challenge que le Tag doit faire, qui est soluble
+seulement si le Tag possède la clef. L'instance peut-être choisit soit
+pas le Reader, soit au hasard, par le Tag.
+\item Le Tag envoit sa réponse au Reader (avec éventuellement le
+challenge si c'est une instance qu'il a tiré)
+\item Le Reader, possédant aussi la clef secrète vérifie que le Tag a
+bien répondu au challenge. Si c'est le cas il authentifie le Tag.
+\end{enumerate}
+
+
+Ce schéma s'instancie de manière quasi-transparente grâce au LPN. Il
+faut simplement rajouter une couche probabiliste, et on obtient le
+protocole HB : figure~\ref{hb}. L'idée est donc de répéter l'opération,
+et de voir si le Tag réussi une proportion environ $1+\epsilon$ des
+challenges. Si c'est le cas, on accepte l'authentification.
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\draw (-0.5,1) node[above] {Tag$(s,\epsilon)$};
+\draw (2.5,1) node[above] {Reader$(s,\epsilon)$};
+ \draw[<-] (0,0) -- (2,0);
+\draw[->] (0,-1) -- (2,-1);
+\draw (1,0) node[above] {$a$};
+\draw (1,-1) node[above] {$z$};
+\draw (3,0) node {$a\leftarrow\{0,1\}^n$};
+\draw (-1,-0.75) node {$\nu\leftarrow Ber(\epsilon)$};
+\draw (-1.,-1.25) node {$z:= a.s+\nu$};
+\draw (3,-1) node {$z\stackrel{?}{=}a.s$};
+\end{tikzpicture}
+\caption{Protocole classique HB}
+\label{hb}
+\end{figure}
 \paragraph{Sécurisé dans le modèle passif}
+Le but des preuves de sécurité est de montrer qu'un protocole est aussi
+difficile à casser que le problème du LPN est difficile à résoudre.
+
+Le modèle passif consiste à suppose que l'attaquant ne peut pas intéragir
+avec les protagonistes. Ainsi une attaque dans le modèle passif consiste
+à dire que l'attaquant regarde des authentification, et au
+bout d'un certains temps il dit "Je suis capable de faire une fausse
+authentification avec probabilité $>1/2$".
+
+ On va montrer que pour le protocole HB, si tel est
+le cas, alors l'attaquant peut aussi résoudre le LPN. Ceci donnera donc
+une garantie de sécurité du protocole : aussi difficile que le LPN dans
+le modèle passif.
+
+\begin{framed}
+Pour la plupart des preuves de sécurité qui vont suivre, on va utiliser
+le lemme suivant, qui ramène le problème du LPN a un problème de
+distinguabilité.
+
+\begin{theo}
+Supposons qu'il existe un algorithme D qui en faisant $q$ queries,
+s'exécutant en un temps t, arrive à distinguer une distribution uniformé
+d'une distribution sortie d'un oracle LPN :
+$$|Pr(s\leftarrow\{0,1\}^n : D^{A_{s,\epsilon}}(1^k)=1)
+-Pr(D^{U}(1^k)=1)|\geq \delta $$
+
+Alors il existe un algorithme M qui résout le LPN en temps
+$O(t.k.\delta^{-2}.log(k))$:
+$$Pr(M^{A_{s,\epsilon}}(1^k)=s)\geq\delta/4 $$
+\end{theo}
+\begin{proof}
+\end{proof}
+\end{framed}
+
+
+
 \paragraph{Une attaque active}
+Dans le modèle actif il y a une première phase en plus, durant laquelle
+l'attaquant peut intéragir avec le Tag.
+\\\\
+ Si on rajoute cette étape, 
+il y a une attaque active simple. On peut commencer par donner plusieurs
+fois le même $a$, vecteur de la base canonique, au Tag, qui va répondre,
+et ainsi nous donner un bit de clef. Puis on recommence pour les autres
+bits de clef.
+\\\\ 
+C'est un exemple de cas où la couche de protocole est la faiblesse du
+système : elle a rendu inutile la difficulté du LPN. 
 \subsubsection{HB sharp}
 \paragraph{Sécurisé dans le modèle actif}
 \paragraph{Une attaque man-in-the-middle}
-\subsubsection{Man-in-the-middle secure authentication schemes}
+\subsubsection{Man-in-the-middle secure authentication scheme}
 \paragraph{Sécurisé dans le modèle man-in-the-middle}
 \paragraph{Une attaque concurrente}
 \paragraph{TODO: Réfléchir à une proposition de correction}
 
+\subsection{Authentification clef publique : contribution}
+De manière générale, lorsque l'on dispose d'un schéma de chiffrement à
+clef publique (ou privé d'ailleurs), on peut en déduire un schéma
+d'authentification selon la méthode suivante :
+\begin{enumerate}
+\item Le Tag fait une demande de challenge au Reader
+\item Le Reader génère $M$ aléatoire, et le chiffre avec la clef privée du
+Tag : $C_1$
+\item Le Tag déchiffre $C_1$ avec sa clef publique, et le chiffre avec la
+clef privée du Reader : il obtient ainsi $C_2$ qu'il envoit au Reader
+\item Le Reader accept si et seulement si le décodé de $C_2$ est égal à
+$M$.
+\end{enumerate}
+
+Cette stratégie très générale permet donc de faire de l'authentification
+à clef privée. Cependant si l'attaquant est MITM, il obtient un accès à
+autant de couples (clair,chiffré) qu'il veut. Pour supprimer ce défaut,
+il faut que le Reader envoit un message aléatoire \emph{signé}.
+
+\subsection{Signature par LPN : contribution}
+\todo[inline]{Réfléchir à l'interet}
+Pour faire de la signature de message, le LPN peut-être intéressant. Il
+existe traditionnellement un méthode pour transformer un schéma
+d'authentification en schéma de signature.
+
+Ici on peut aussi prendre notre message, le découper en blocs de $n$
+bits, et les utiliser comme la matrice $A$. Cependant cette matrice n'est
+pas directement aléatoire. Il faut donc la randomiser. Pour ça il faut
+être capable de générer du bruit.
+
 \section{Modèles et cryptanalyses}
-Les protocoles présentés précedemment font tous l'hypothèse que le
+Les protocoles présentés précédemment font tous l'hypothèse que le
 problème du LPN est difficile. Pour vérifier la solidité de cette
 hypothèse,   nous allons
 présenter rapidement les deux grands modèles d'apprentissage SQ et PAC, ainsi que le
@@ -103,20 +295,20 @@ nous verrons les algorithmes classiques, des paramètres caractéristiques,
 et des idées d'algorithmes ou d'améliorations testées durant le stage.
 
 \subsection{Modèles}
-Cette partie est inspirée des cours de Avrim
+Cette partie est inspirée des cours d'Avrim
 Blum à la Carnegie Mellon University
 \subsubsection{Modèle PAC}
 Le modèle PAC, pour Probably Approximately Correct, est un modèle
 d'apprentissage ici présenté dans le cadre de la
-classification : dans le cadre du LPN, la classe d'un vecteur $a$ est
+classification : pour le LPN, la classe d'un vecteur $a$ est
 $a.s$.
 \begin{defi}
 On dit qu'une classe de fonction $\mathcal{C}$ booléennes de l'hypercube
 de dimension n est PAC-learnable si pour tout $i\in\mathcal{C}$, étant donné un oracle qui génère des
 entrées
-selon une loi $\mathcal{D}$ et qui donne une classification correct avec une
+selon une loi $\mathcal{D}$ et qui donne une classification correcte avec une
 certaine probabilité $1-\eta$, $\forall
-\delta<\frac{1}{2},\epsilon<\frac{1}{2}$ il existe un algorithme
+\delta<\frac{1}{2}, \epsilon<\frac{1}{2}$ il existe un algorithme
 $\mathcal{A}$ tel qu'avec probabilité au moins $1-\delta$ l'algorithme donne une
 $\epsilon$-approximation de la fonction cible sur $\mathcal{D}$. 
 \end{defi}
@@ -129,24 +321,24 @@ données.
 \\
 On dispose d'un oracle pouvant répondre à des questions de type "Quelle
 est la probabilité que l'instance x vérifie le prédicat P". L'oracle
-répond un intervalle de probabilité : c'est à dire "C'est entre
-$p - \tau$ et $p + \tau$". La question posée doit-être évaluable
+répond un intervalle de probabilité : c'est-à-dire "C'est entre
+$p - \tau$ et $p + \tau$". La question posée doit être évaluable
 en temps polynomial.
 \\
 \begin{defi}
 On dit qu'une classe de fonction $\mathcal{C}$ booléennes de l'hypercube
 de dimension n est SQ-learnable sur la
-distribution $\mathcal{D}$ si il y a un algorithme $\mathcal{A}$
+distribution $\mathcal{D}$ s'il y a un algorithme $\mathcal{A}$
 tel que $\forall c \in \mathcal{C}, \epsilon>0$, $\mathcal{A}$ donne une
 $\epsilon$-approximation de c à partir de l'oracle SQ. Le temps
-d'execution d'algorithme, le nombre de queries et l'inverse de la plus
+d'exécution d'algorithme, le nombre de queries et l'inverse de la plus
 petite tolérance $\tau$ doivent être polynomiaux en $n$ et en
 $\frac{1}{\epsilon}$. 
 \end{defi}
 \begin{defi}
 On dit qu'une classe de fonction est faiblement SQ-learnable, s'il existe
 un $\epsilon<\frac{1}{2}-\frac{1}{poly(n)}$ tel que la définition
-précèdente soit vérifiée.(Quantification existentielle au lieu
+précédente soit vérifiée.(Quantification existentielle au lieu
 d'universelle sur $\epsilon$) 
 \end{defi}
 Ce modèle, est en fait expressif, de nombreux problèmes sont
@@ -156,13 +348,13 @@ Soit $f$ une fonction de l'ensemble des fonctions qui sont des
 disjonctions de n variables booléennes. Par exemple
 $f(x)=x_1 \vee x_4 \vee \dots \vee x_{n-2}$.
 On cherche à l'apprendre. Pour ça on va faire les queries
-$P(f(x)=0\wedge x_i=1)$ pour tout $i\in [1,n]$. Si la i-ème réponse est
-suffisament petite : plus petite que $\frac{\epsilon}{n}$, alors $x_i$
+$P(f(x)=0\wedge x_i=1)$ pour tout $i\in [1,n]$. Si l'i-ème réponse est
+suffisamment petite : plus petite que $\frac{\epsilon}{n}$, alors $x_i$
 n'est pas dans l'expression de f.  
 \paragraph{SQ-learnable $\Rightarrow$ PAC-learnable}
-Etant donné un nombre important de samples, on peut simuler l'oracle. Il
+Étant donné un nombre important de samples, on peut simuler l'oracle. Il
 faut que la taille des samples soit grossièrement en
-$O(\frac{1}{\tau^2})$, pour obtenir un précision de $\tau$.
+$O(\frac{1}{\tau^2})$, pour obtenir une précision de $\tau$.
   
 \paragraph{Théorème de non SQ-learnabilité}
 \cite{Blum} propose une caractérisation des problèmes SQ-learnable, que
@@ -176,10 +368,10 @@ $$\forall i \not= j, |Pr_D(f_i=f_j)-Pr_D(f_i \not= f_j)|\leq \frac{1}{d^3} $$
 \end{defi}
 \begin{theo}
 Soit $\mathcal{F}$ une classe de fonctions booléennes et $\mathcal{D}$
-une distribution telle que $SQ_{dim}(\mathcal{F},\mathcal{D})\geq d \geq
+une distribution telle que $SQ_{dim}(\mathcal{F}, \mathcal{D})\geq d \geq
 16$. Alors si toutes les queries sont faites avec tolérance
 $\tau\geq\frac{1}{d^{\frac{1}{3}}}$, au moins $d^{\frac{1}{3}}/2$ queries
-sont necessaires pour apprendre $\mathcal{F}$ avec une erreur inférieur a
+sont nécessaires pour apprendre $\mathcal{F}$ avec une erreur inférieur a
 $\frac{1}{2}-\frac{1}{d^3}$ 
 \end{theo}
 \begin{theo}
@@ -190,9 +382,9 @@ SQ-learnable.
 En effet la dimension SQ de l'ensemble des fonctions affines booléennes sur
 $GF(2)^n$ n'est pas polynomiale :
 \\\\
-On prends $D$ la distribution uniforme, alors 
-$\forall a,a'\in GF(2)^n,
-Pr_D(a.x=a'.x)=\frac{1}{2}$,$Pr_D(a.x\not=a'.x)=\frac{1}{2}$
+On prend $D$ la distribution uniforme, alors 
+$\forall a, a'\in GF(2)^n,
+Pr_D(a.x=a'.x)=\frac{1}{2}$, $Pr_D(a.x\not=a'.x)=\frac{1}{2}$
  De plus on ne peut pas faire des queries avec
 des tolérances inférieures à celles de la proposition, en temps
 polynomial.
@@ -203,11 +395,11 @@ utilisent des "opérations non SQ-like". Par exemple, des combinaisons
 linéaires.
 
 \subsection{Algorithmes pour attaquer le LPN}
-Il est necessaire de distinguer deux grandes classes
+Il est nécessaire de distinguer deux grandes classes
 d'algorithmes, en fonction du nombre de samples (donc d'authentification)
-necessaire. Dans un premier temps nous allons étudier les algorithmes
-necessitant peu de queries (donc plus lents), puis ensuite nous verrons
-les algorithmes "BKW-like" necessitants plus de queries.
+nécessaire. Dans un premier temps nous allons étudier les algorithmes
+nécessitant peu de queries (donc plus lents), ensuite nous verrons
+les algorithmes "BKW-like" nécessitants plus de queries.
 
 
 \subsubsection{Avec peu de queries}
@@ -216,60 +408,303 @@ Comme toujours en cryptographie, on peut chercher à effectuer une attaque
 par recherche exhaustive. Cependant ici plusieurs types de recherches sont
 possibles.
 \begin{itemize}
-\item On peut effectuer une recherche exhaustive naive sur le
+\item On peut effectuer une recherche exhaustive naïve sur le
 secret, et tester pour chaque secret si la proportion d'erreur est égale
 au bruit.
 \item On peut effectuer une recherche exhaustive sur le bruit, chercher
 la position des erreurs, car on sait qu'il y a peu d'erreurs, ensuite
 retrouver le secret associé par une élimination de Gauss, puis tester que
 ce secret est en effet bon. Le problème est que l'élimination de Gauss
-est assez couteuse : $O(n^3)$.
+est assez coûteuse : $O(n^3)$.
 \item \cite{Gol} fait moralement quelque chose d'équivalent, mais
-présenté de manière différente, ceci facilitant l'implémentation :
+présenté de manière différente, ceci facilitant implantations :
 $s=A^{-1}.(\nu+b)$, et sa recherche
-exhaustive sur s se fait en recherchant exhaustivement sur $\nu$ par poid
-de hamming croissant. Cette manière d'énumérer permet de tomber beaucoup
-%TODO: PRECISER
-plus rapidement sur la solution. En pratique pour des bruits suffisament
+exhaustive sur s se fait en recherchant exhaustivement sur $\nu$ par poids
+de Hamming croissant. Cette manière d'énumérer permet de tomber beaucoup
+plus rapidement sur la solution : tous les mots n'ont pas la même
+probabilité d'être secret. En effet, la distribution du poids de
+hamming du bruit est fortement chargée autour de $\epsilon.n$. En pratique pour des bruits suffisamment
 faibles\footnote{0.01 pour n=768 par exemple}, c'est la meilleure attaque. Cette attaque a
 le mérite de se paralléliser très facilement. 
 \end{itemize} 
 
 \paragraph{Attaque par vecteurs corrélés}
-Le deuxième type d'attaque est asymptotiquement meilleur mais théorique.
-L'idée consiste à profiter 
-\subparagraph{Amélioration de \cite{Grigo}}
+Ce deuxième type d'attaque est asymptotiquement meilleur mais théorique.
+\subparagraph{Découpage et compromis temps-mémoire de \cite{Grigo}}
+
+\cite{Grigo} utilise en boite noire le résultat suivant :
+\begin{framed}
 \begin{theo}\cite{Indyk}
-      \\ Etant donné N points de l'hypercube de dimension d, on peut
-trouver une paire de points $\delta$-proche, avec $\delta \leq
-\epsilon.\rho$ où $\epsilon$ est la plus petite distance entre deux
- des N points. Ceci est fait en $O(d.N^{1+\frac{1}{\rho^2}+o(1)})$
-        \end{theo} 
-  L'approche consiste à supposer que le secret est sparse de poid de
-hamming r
-donné.\footnote{Plus tard on verra qu'en fait cette hypothèse est vide,
-et qu'on peut réduire un problème LPN à un sparse LPN}
-   L'idée de \cite{Grigo} est de construire tous les secrets de poid de
-hamming $\frac{r}{2}$, d'évaluer 
-      \begin{theo} Il existe un algorithme qui résoud un LPN r-sparse en
-effectuant
-$\frac{r.log(\frac{n}{\delta}).\omega(1)]}{\epsilon^2.(1-2.\eta)^2}$
-queries en un temps
-$$\frac{log(\frac{1}{\delta}}).n^{(1+(2.\eta)^2+o(1))r/2}{(1-2\eta)^2}$$
-      \end{theo}
-      \begin{proof}
-      \end{proof}
+            \\ Étant donné N points de l'hypercube de dimension d, on peut
+      trouver une paire de points $\delta$-proche, avec $\delta \leq
+      \epsilon.\rho$ où $\epsilon$ est la plus petite distance entre deux
+       des N points. Ceci est fait en $O(d.N^{1+\frac{1}{\rho^2}+o(1)})$
+\end{theo}
+\begin{intui}
 
-\subparagraph{Amelioration de \cite{Valiant}} \cite{Valiant} propose une attaque qui utilise le gain de la
-multiplication matricielle rapide.Son attaque ne fait pas intervenir le
-bruit dans l'exposant
+L'idée consiste à hacher les vecteurs par de multiples fonctions de
+hachages dites \emph{local-sensitive} : ces fonctions hachent des entrées
+proches vers la même sortie. $$\begin{cases} ||p-q||\leq R \Rightarrow
+Pr(h(q)=h(p))\geq P_1 \\||p-q||\geq c.R \Rightarrow Pr(h(p)=h(q))\leq P_2
+\end{cases} $$ Où  $P_1 > P_2$. L'utilisation de plusieurs fonctions de
+hachage simultanées permet de diminuer la probabilité que deux vecteurs
+pas réellement proches se retrouvent hachés ensemble.
 
-\paragraph{Attaque par dualité : Contribution }
+On cherche
+alors simplement à trouver deux vecteurs dans la même entrée de la table
+finale.  
+\end{intui}
+\end{framed}
+
+  L'approche consiste à supposer que le secret est sparse de poids de
+  Hamming r
+  donné.\footnote{Plus tard on verra qu'en fait on peut $\epsilon.n$-sparsifier un
+  secret, voir plus bas l'étape de réduction à un secret sparse}
+  L'idée de \cite{Grigo} est de construire tous les secrets de poids de
+  Hamming $\frac{r}{2}$, en construisant :
+\begin{itemize}
+      \item $\mathcal{H}_1$ l'ensemble des évaluations, image des vecteurs de
+      poids r/2.
+      \item $\mathcal{H}_2$ l'ensemble des évaluations, image des vecteurs de
+      poids r/2, xorées avec le vecteur b.
+\end{itemize}  
+\begin{theo} Il existe un algorithme qui résout un LPN r-sparse en
+    effectuant
+    $\frac{r.log(\frac{n}{\delta}).\omega(1)}{\epsilon^2.(1-2.\eta)^2}$
+    queries en un temps
+    $$\frac{log(\frac{1}{\delta}).n^{(1+(2.\eta)^2+o(1))r/2}}{(1-2\eta)^2}$$
+\end{theo}
+\begin{proof} Étudions d'abord le cas ou le bruit est nul. On
+  remarque que dans ce cas, si on regarde les deux bouts de secrets $c_1+c_2=c$ de poids
+  r/2 chacun, leurs images dans $\mathcal{H}_1$, $\mathcal{H}_2$ sont à
+  distance de Hamming 0. \\
+  Dans le cas où il y a du bruit, ils sont à
+  distance de Hamming valant la valeur du bruit. Ceci est caractéristique
+  des composantes du secret puisqu'en position générale, on obtient des
+  vecteurs distants d'environ n/2. En utilisant le théorème de \cite{Indyk}
+  on peut alors retrouver ces deux parties du secret, en cherchant dans
+  $\mathcal{H}_1$ et $\mathcal{H}_2$ deux vecteurs proches. La preuve de complexité
+  est en temps est alors :
+\begin{itemize}
+\item Générer les ensembles $\mathcal{H}_1,\mathcal{H}_2$ coûte
+$O(n^\frac{r}{2})$  
+\item Trouver des vecteurs proches
+$O(d.n^{(1+\frac{1}{\rho^2}+o(1)).\frac{r}{2}})$ où d est de l'ordre du
+nombre de samples. 
+\end{itemize} 
+\end{proof}
+Cet algorithme se comporte donc en $O(n^{\frac{k}{2}})$ lorsque le bruit
+est faible, et en $O(n^k)$ lorsque le bruit tend vers 1/2.
+
+\subparagraph{Attaque théorique de \cite{Valiant}} 
+
+ \cite{Valiant} propose une attaque du même type, cherchant deux vecteurs
+corrélés, quand les autres ne le sont pas :
+\begin{framed}
+
+\begin{theo}
+$\forall \epsilon > 0,$ pour $N$ suffisamment grand, soit $N$
+vecteurs dans $\{-1,1\}^k$ choisis uniformément au hasard, sauf une paire
+qui possède un produit scalaire supérieur ou égal à $\rho.k$. On peut
+repérer cette paire de vecteur corrélés en temps
+$$O(\frac{N^{\frac{5-\omega}{4-\omega}}}{\rho^{2.\omega}})<N^{1.62}.poly(1/\rho)$$
+où $\omega < 2.38$ est l'exposant de la multiplication matricielle.
+\end{theo}
+\begin{intui}
+La stratégie est dite selon \cite{Valiant} type \emph{Expand and Aggregate}.
+
+\begin{itemize}
+\item \emph{Calcul de produit scalaire, Expand :} On place N colonnes de
+dimension k dans une matrice $X$. Ce sont les vecteurs dont on cherche à
+calculer le produit scalaire, pour calculer la corrélation : en effet
+$d(u,v)=\frac{k-u.v}{2}$. On remarque que $W=X^t.X$ contient exactement
+les corrélations qu'il nous faut. Ainsi on cherche l'élément maximal en
+dehors de la diagonale qui nous donnera les deux vecteurs les plus
+corrélés.
+\item \emph{Aggregate :} Lorsque l'on dispose de N colonnes dont deux sont
+très correlées, on peut agréger les colonnes en les regroupant par
+groupe de l et en xorant les éléments d'un groupe tous ensemble pour
+générer un  seul représentant. On remarque alors qu'une forte corrélation subsiste si on n'a pas
+regroupé les deux entrées corrélées dans un même groupe. 
+\end{itemize} 
+Plutôt que d'effectuer directement le calcul de correlation (amélioré par
+le produit matriciel rapide), on peut effectuer une étape d'agrégation,
+par exemple en $N^{\frac{2}{3}}$ groupes de $N^{\frac{1}{3}}$ éléments.
+Ainsi on retrouve les deux groupes correlés, puis on termine soit par simple
+bruteforce soit on relance sur une instance plus petite.
+La complexité dépend donc de la taille de la matrice
+initiale (qui doit posséder suffisament de ligne pour que l'agrégation ne
+fasse pas disparaitre la corrélation) et du temps passé à calculer les
+produits matriciels. \cite{Valiant} détermine l'optimum pour
+$k=N^{\eta+\frac{1}{4-\epsilon}}/\rho^2, \forall \eta>0$\footnote{Le $\eta$ intervient
+dans la réussite avec probabilité
+$1-o(1)=1-\frac{1}{N^{\eta+\frac{1}{4-\epsilon}}}$}
+\end{intui}
+\end{framed}
+
+\begin{theo}
+Il existe un algorithme qui résout le 2-sparse LPN de dimension n en temps
+sous-quadratique en n. 
+\end{theo}
+
+\begin{proof}
+On supprime toutes les équations obtenues dont le membre de droite vaut
+1. Ainsi on obtient donc $A'.s=0_{GF(2)^l}$, qui sont l équations dont le
+membre de droite vaut 0. Alors, le problème du LPN 2-sparse revient à
+chercher deux colonnes de $A'$ correlées. Il y a n colonnes, en dimension
+l, ce qui donne avec probabilité $1-o(1)$ la complexité majorante : 
+$$n^{1.62}.poly(\frac{1}{1-2.\epsilon}) $$ 
+\end{proof}
+
+\begin{framed}
+
+\begin{theo}\label{reductionvaliant}
+Étant donné un algorithme qui résout le r-sparse LPN en dimension n en temps
+$O(n^\alpha)$, on peut construire  un algorithme qui résout un
+$k$-sparse $\forall k \geq r$ en temps $O(n^{\frac{k.\alpha}{r}})$
+\end{theo}
+
+\begin{proof}
+Le but est de transformer les exemples initiaux du LPN $k$-sparse de taille n, en
+exemples pour un LPN r-sparse de taille environ $n^{\frac{k}{r}}$.
+
+Pour tout exemple du LPN $k$-sparse de taille $n$, on génère un exemple
+en prenant pour les composante, le xor des parties de
+$\frac{k}{c}$ composantes de l'exemple initial.
+
+Si les exemples initiaux contiennent un ensemble de $k$ composante dont
+les xors sont
+correlés avec les labels, alors cette ensemble va s'éclater dans les
+exemples générés, qui va contenir des
+ensembles (éventuellement plusieurs, numérotés de 1 à 3 dans la
+figure~\ref{expli}) de $c$ composantes dont les xors sont correlés avec les labels. 
+Rigoureusement les exemples générés ne suivent plus une distribution
+uniforme, par exemple il y a plus d'une paire correlée avec le label, cependant l'algorithme de recherche de vecteurs correlés est
+suffisament stable selon \cite{Valiant}. Voir figure~\ref{expli} pour un schéma plus explicatif
+que la prose.
+\\\\
+Finalement, on résout cette instance construite, on retrouve donc une
+solution de poid de hamming $r$, qui se relève et se "diffuse", par
+construction, en la solution, qui est de poid de hamming $k$. 
+
+\end{proof}
+\end{framed}
+\begin{figure}
+\centering
+\begin{tikzpicture}
+
+\draw[color=blue] (2.25,5.5) node[above] {$\bullet$} ;
+\draw[color=blue] (3.25,5.5) node[above] {$\bullet$} ;
+\draw[color=blue] (4.25,5.5) node[above] {$\bullet$} ;
+\draw[color=blue] (6.25,5.5) node[above] {$\bullet$} ;
+
+\draw[color=green] (-0.75,0) node[below] {$\bullet 1$};
+\draw[color=green] (7.25,0) node[below] {$\bullet 1$};
+
+\draw[color=red] (0.25,0) node[below] {$\bullet 2$};
+\draw[color=red] (5.25,0) node[below] {$\bullet 2$};
+
+\draw[color=brown] (2.25,0) node[below] {$\bullet 3$};
+\draw[color=brown] (3.25,0) node[below] {$\bullet 3$};
+
+\draw (2,4) rectangle (2.5,5.5);
+\draw (3,4) rectangle (3.5,5.5);
+\draw (4,4) rectangle (4.5,5.5);
+\draw (5,4) rectangle (5.5,5.5);
+\draw (6,4) rectangle (6.5,5.5);
+
+\draw (-1,0) rectangle (-0.5,1.5);
+\draw (0,0) rectangle (0.5,1.5);
+\draw (1,0) rectangle (1.5,1.5);
+\draw (2,0) rectangle (2.5,1.5);
+\draw (3,0) rectangle (3.5,1.5);
+\draw (4,0) rectangle (4.5,1.5);
+\draw (5,0) rectangle (5.5,1.5);
+\draw (6,0) rectangle (6.5,1.5);
+\draw (7,0) rectangle (7.5,1.5);
+\draw (8,0) rectangle (8.5,1.5);
+%1 edges
+\draw[color=green] (2.25,4) -- (-0.75,1.5);
+\draw[color=green]  (3.25,4) -- (-0.75,1.5);
+
+\draw[color=red] (2.25,4) -- (0.25,1.5);
+\draw[color=red] (4.25,4) -- (0.25,1.5);
+
+\draw (2.25,4) -- (1.25,1.5);
+\draw (5.25,4) -- (1.25,1.5);
+
+\draw[color=brown] (2.25,4) -- (2.25,1.5);
+\draw[color=brown] (6.25,4) -- (2.25,1.5);
+%2 edges
+
+\draw[color=brown] (3.25,4) -- (3.25,1.5);
+\draw[color=brown] (4.25,4) -- (3.25,1.5);
+
+\draw (3.25,4) -- (4.25,1.5);
+\draw (5.25,4) -- (4.25,1.5);
+
+\draw[color=red] (3.25,4) -- (5.25,1.5);
+\draw[color=red] (6.25,4) -- (5.25,1.5);
+%3 edges
+
+\draw  (4.25,4) -- (6.25,1.5);
+\draw  (5.25,4) -- (6.25,1.5);
+
+\draw[color=green] (4.25,4) -- (7.25,1.5);
+\draw[color=green] (6.25,4) -- (7.25,1.5);
+
+
+%4 edges
+
+\draw (5.25,4) -- (8.25,1.5);
+\draw (6.25,4) -- (8.25,1.5);
+
+\end{tikzpicture}
+\caption{Cas $r=2$, $k=4$}
+\label{expli}
+\end{figure}
+
+\begin{coro}
+Il existe un algorithme qui résout avec probabilité $1-o(1)$ le LPN $k$-sparse en dimension n, avec
+complexité :
+$$O(n^{0,81.k}.poly(\frac{1}{1-2.\epsilon}))$$
+\end{coro}
+
+\begin{theo}{Version forte non prouvée}
+\\
+Pour tout $\eta>0$
+On peut résoudre le $r$-sparse LPN de taille $n$ et de bruit $\epsilon$
+avec probabilité $1-o(1)=1-\frac{1}{N^{\eta+\frac{1}{4-\epsilon}}}$ avec une complexité temporelle de :
+$$O(n^{\frac{(\omega+\eta).r}{3}}.poly(\frac{1}{1-2.\epsilon}))<
+O(n^{0,8.r}.poly(\frac{1}{1-2.\epsilon}))$$
+\end{theo}
+\begin{intui}
+\cite{Valiant} utilise le théorème ~\ref{reductionvaliant} avec une instance
+initiale de taille 3 au lieu de taille 2, qui permet un gain 0.02 pour le
+facteur dans
+l'exponentielle.
+\end{intui}
+
+L'attaque est donc mieux que l'attaque précèdente pour
+des bruits plus élevés, puisque l'exposant est indépendant du bruit,
+contrairement à l'attaque précèdente.
+\\
+Enfin, bien que cette dernière attaque fasse disparaître le bruit de
+l'exposant, cette disparition est assez factice. En effet
+classiquement quand on se réduit à un secret sparse, on se réduit à un
+secret dont la sparsité dépend du bruit. Donc le k dépend de $\epsilon$
+et le bruit réapparait dans la formule. Cette transformation en ajoutant
+une variable k, et en la rendant indépendante de n est donc utile, permet
+d'établir des résultats théorique intéressant, mais n'attaque pas le LPN
+classique. L'attaque porte donc uniquement sur les implémentations avec
+un secret k sparse, k indépendant de n. 
+
+\paragraph{Attaque par dualité : Contribution} 
+
 Il est assez classique que le problème du LPN soit relié à un problème de
 décodage : A est la matrice génératrice d'une code linéaire, et on
 cherche à déterminer quel est le mot code réel $As$ en partant du mot code
-bruité $As+\nu$, Autrement dit on cherche un vecteur court dans le noyau à
-gauche de A.
+bruité $As+\nu$.
 \\
  Ici nous décrivons une autre manière de voir ce
 problème, pour donner un sens à la matrice noyau à gauche de A. Cette
@@ -297,10 +732,10 @@ vecteur court dans $ker(A^\dagger)$.
 
 
 \subparagraph{Decoding in $2^{n/20}$} 
-Le decoding problem possède une litterature très étoffée de \cite{Stern}
+Le decoding problem possède une littérature très étoffée de \cite{Stern}
 à \cite{Joux}. Il consiste à trouver le mot code à partir du syndrome (en
 le calculant avec le mot code bruité). Les améliorations finales dues à
-Joux et May donnent une complexité en $2^{n/20}$. Nous nous étendrons
+Joux et May donnent une complexité en $2^{n/20}$. Nous ne nous étendrons
 pas sur ces méthodes parce qu'elles relèvent d'un autre domaine classique
 et que nous ne pouvons pas facilement procéder à des tests (pas de
 decoding implémenté en Sage).
@@ -312,12 +747,12 @@ le premier vecteur court est optimal d'après \cite{Phong} à un facteur expéri
 $1.08^{\frac {n-1} 2}$ près.
 Cependant LLL ne fonctionne pas dans $GF(2)$\footnote{les réseaux dans un
 $GF(2)$ espace vectoriel étant moralement des sous-groupes de $GF(2)^n$
-donc des $GF(2)^k$, ce n'est pas très riche, }. Néanmoins, remarquons que
+donc des $GF(2)^k$, ce n'est pas très riche}. Néanmoins, remarquons que
 si 
- $x\in GF(2)^n$, où l'espace est métrique pour la distance de hamming, considéré comme un vecteur de $\mathbb{R}^n$ on a :
+ $x\in GF(2)^n$, où l'espace est métrique pour la distance de Hamming, considéré comme un vecteur de $\mathbb{R}^n$ on a :
 $$HammingWeight(x)=\| x \| ^2$$  
  Martin Albrecht propose alors qu'en pratique un LLL dans R donnera un
-vecteur court dont les composantes seront en valeur absolue plus petit
+vecteur court dont les composantes seront en valeur absolue plus petites
 que 1, que l'on pourra ensuite re-projeter sur $GF(2)$ qui donnera un bon
 vecteur court.
 \\
@@ -325,17 +760,68 @@ On remarque dans tous les cas que $1.08^{\frac {n-1} {2}}$ devient
 rapidement trop grand, et donc qu'LLL n'assure plus du tout de trouver un
 vecteur optimal. Voir~\ref{Impsvp} pour des ordres de grandeurs.
 
-\paragraph{Changement de modèle} Dans \cite{Arora} les auteurs constatent
+\paragraph{Changement de modèle}
+
+ Dans \cite{Arora} les auteurs constatent
 que lorsque l'on change légèrement le modèle, on peut trouver des
-solutions polynomiales. Plutôt que de tirer les samples au coup par coup,
-ils proposent d'avoir un "bouton", qui permet d'obtenir m samples dont on
-est sur qu'une fraction $\tau$ est bonne.
-\todo[inline]{Ici}
-\paragraph{Réduction de bruit : Contribution} \label{SAT} 
-Jusqu'a présent nous n'avons pas encore vu de méthodes pour réduire le
+solutions en temps polynomiales au problème du LPN ainsi modifié. Plutôt que de tirer les samples au coup par coup,
+ils proposent d'avoir un "bouton", qui permet d'obtenir m samples dont
+\emph{on
+est sûr qu'une fraction $\tau$ est bonne}.
+
+
+\begin{framed}
+\begin{defi}
+On appelle oracle à motif, un oracle $O_P$, où $P$ est un polynôme en m
+variables. Lorsqu'on questionne l'oracle, il donne $a_1, \dots, a_m$,
+ainsi que $a_i.s+\nu_i$ où s est le secret, et $\nu$ est un vecteur tel
+que $P(\nu)=0$, où chaque composante de $\nu$ est une variable du
+polynôme. Autrement dit, l'oracle à motif donne des bruits qui sont
+parmis les racines du polynôme.
+\end{defi}
+
+\begin{theo}
+Soit $P$ un polynome de m variables tel qu'au moins un $\rho\in GF(2)^m$
+ne s'écrive pas sous la forme $\rho=\nu + \nu'$ où $P(\nu)=P_(\nu')=0$.
+Alors il existe un algorithme qui apprend le secret s en temps
+$poly(n^m)$.
+\end{theo}
+
+\begin{intui}
+On a $P(\nu_1,\dots,\nu_m)=0$, on fait le changement de variable
+$\nu_i=a_i.s+b_i$ donc on a 
+$$P(a_1.s+b_1, \dots, a_m.s+b_m)=0$$
+Donc ça nous fait des équations polynomiales en s (on peut répéter
+plusieurs fois l'opération). Ensuite on les
+linéarise, en remplaçant les monômes présents par des nouvelles
+variables. Le polynôme est par définition d'un degrès d connu, donc on a
+$N=\sum_{i=1}^d \binom{n}{i}$ variables.
+\\\\
+\cite{Arora} propose qu'en prenant $10.N.2^{m+d}$ samples, le système
+aura au moins une solution, et avec grande probabilité, toutes les
+solutions du systèmes construit seront solutions du LPN initial.
+Le fait de poser un polynôme intermédiaire, dont le degrès dépend en fait
+normalement
+de la dimension, éclate la complexité en la paramétrant, et elle devient
+polynomiale en la dimension. L'article cible donc où se situe la
+difficulté du problème de manière plus précise : dans la forme du bruit. 
+\end{intui}
+ 
+\begin{coro}
+En prenant un polynôme P tel que $P(\nu)=0$ si et seulement si $\nu$ a un
+poids de Hamming d'au plus $m/3$. C'est un polynôme, par interpolation de
+Lagrange. On obtient alors un algorithme
+polynomial : $O(n^m)$
+\end{coro}
+\end{framed}
+
+
+
+\paragraph{Réduction de bruit : Contribution} \hrulefill \label{SAT} 
+Jusqu'à présent nous n'avons pas encore vu de méthodes pour réduire le
 bruit du LPN. Dans ce but on peut faire le OU de disons k équations, et
-alors on obtient une équation juste avec très très grande probabilité.
-Ainsi en augmentant le degrès des équations, on diminue le bruit à
+alors on obtient une équation juste avec très grande probabilité.
+Ainsi en augmentant le degré des équations, on diminue le bruit à
 vitesse exponentielle :
  $$P(\bar\nu_1 \vee \bar\nu_2 \vee \dots \vee \bar\nu_k)=(\epsilon)^k$$
 \\\\
@@ -343,14 +829,14 @@ Cette stratégie génère donc un système d'équations polynomiales. Pour le
 résoudre on peut envisager plusieurs solutions :
 \begin{itemize}
 \item Bases de Grobner
-\item Relinéarisation : on pose tout les monomes présents comme des
+\item Relinéarisation : on pose tous les monômes présents comme des
 variables
 \item SAT-solving
 \end{itemize}
-Voir~\ref{ISAT} pour l'implémentation et les résultats.
+Voir~\ref{ISAT} pour implantations et les résultats.
 
 \subsubsection{Approche "légo"}
-Il s'avère que les algorithmes  necessitant un grand nombre
+Il s'avère que les algorithmes  nécessitant un grand nombre
 de queries sont tous construits autour des mêmes idées. Dans le but de
 montrer cette unité, dans cette partie nous allons présenter différents
 blocs de bases, extraits d'algorithmes divers. Ensuite nous décrirons les
@@ -361,11 +847,11 @@ présenterons notre propre vision.
 Le premier bloc consiste en la réduction de la taille du problème, au
 prix d'une augmentation très significative du bruit.
 \\
-Pour celà, on prend nos samples, que l'on classe par groupes : sont dans
+Pour cela, on prend nos samples, que l'on classe par groupes : sont dans
 le même groupe tous les éléments qui ont en communs les $b$ premiers bits.
-Ensuite dans chaque groupe on additionne un élément à tout les autres et
+Ensuite dans chaque groupe on additionne un élément à tous les autres et
 on supprime cet élément, voir figure~\ref{bbkw}. Ainsi tous les éléments ont leurs $b$ premiers
-bits à zero. On recommence avec les $b$ suivant etc\dots
+bits à zéro. On recommence avec les $b$ suivant etc\dots
 On répète cette opération a fois. Et on a ainsi réduit le problème à une
 taille $n-ab$. En pratique pour faire les groupes on effectue simplement
 un tri sur les bits concernés.
@@ -412,6 +898,7 @@ pour ensuite voter à la majorité, la valeur du bit de secret
 correspondant. Il faut donc que le problème soit de petite dimension, et
 qu'on ait beaucoup de samples. 
 \subparagraph{FFT}
+\begin{framed}
 On sait que la transformée de Fourier de notre fonction, qu'on appelle
 aussi transformée de Walsh-Hadamard, permet de trouver la meilleure
 approximation affine d'une fonction booléenne.\\\\
@@ -422,69 +909,73 @@ Les caractères irréductibles sont les $$\chi_y(x)=(-1)^{x.y},
 \end{theo}
 \begin{theo}
 Soit $\phi_y(x)=y.x=x_1.y_1+\dots+x_n.y_n$, $d$ la distance
-de hamming, $\mathcal{W}$ la transformée de Walsh, et f une fonction
+de Hamming, $\mathcal{W}$ la transformée de Walsh, et f une fonction
 booléenne. Alors
-$$d(f,\phi_y)=2^{n-1}-\frac{1}{2}.max\{\mid\mathcal{W}(x\mapsto(-1)^{f(x)})(y)\mid| 
+$$d(f, \phi_y)=2^{n-1}-\frac{1}{2}.max\{\mid\mathcal{W}(x\mapsto(-1)^{f(x)})(y)\mid| 
 y\in GF(2)^n \}$$
 \end{theo}
 \begin{proof}
 On a : \\\\
 \begin{tabular}{r c l}
 $\mathcal{W}(x\mapsto(-1)^{f(x)})(y)$&$=$&$\sum\limits_{x\in GF(2)^n}(-1)^{f(x)+x.y}$\\
-&$=$&$card\{x\in GF(2)^n | f(x)=x.y\}-card(x\in GF(2)^n | f(x)\not=x.y\}$\\
-&$=$&$2^n-2d(f,\phi_y)$
+&$=$&$card\{x\in GF(2)^n | f(x)=x.y\}-card\{x\in GF(2)^n | f(x)\not=x.y\}$\\
+&$=$&$2^n-2d(f, \phi_y)$
 \end{tabular}
 \end{proof}
-Donc il suffit de connaitre la position du coefficient de la transformée
-le plus grand, pour connaitre la meilleure approximation affine, et donc
-le secret. Cette procédure a été proposée par \cite{LF}.
+\end{framed}
+
+Donc pour connaître la meilleure approximation affine, il suffit de connaître la position du coefficient de la transformée
+le plus grand. Or la meilleure approximation affine, c'est exactement le
+secret.
+ Cette procédure a été proposée par \cite{LF}.
 En pratique le calcul d'une transformée de Walsh-Hadamard coûte $2^n.n$,
 cependant \cite{Kirchner} propose de gagner un peu si le secret est
 sparse. 
  
 \subparagraph{Approche SFT}
 \label{SFT}
-Des algorithmes pour connaitre les coefficients de Fourier dominant d'une fonction d'un groupe
+Des algorithmes pour connaître les coefficients de Fourier dominant d'une fonction d'un groupe
 abélien ont été proposés par \cite{Mansour} (pour les fonctions booléennes)
 puis  \cite{Akavia}.
 \\
-\cite{Vaudenay} décrit précisemment le fonctionnement de
+\cite{Vaudenay} décrit précisément le fonctionnement de
 l'algorithme, qui est une recherche dichotomique par le biais d'un
 estimateur, que nous appellerons estimateur AKMV. Cet estimateur AKMV
 permet d'estimer la somme des coefficients de Fourier qui sont dans un
-voisinage (dont on peut controler la taille) d'un point donné. Ainsi
-l'algorithme de SFT consiste simplement a faire une recherche
+voisinage (dont on peut contrôler la taille) d'un point donné. Ainsi
+l'algorithme de SFT consiste simplement à faire une recherche
 dichotomique, en éliminant à chaque fois les branches ne contenant pas un
-poid en coefficient de Fourier suffisant.
+poids en coefficient de Fourier suffisant.
 \begin{defi}
  En dimension n, l'estimateur akmv en h de voisinage k vaut
-$$akmv(h,k)=\frac{2^{2.n}}{N}.\sum_{i=0}^{n}
+$$akmv(h, k)=\frac{2^{2.n}}{N}.\sum_{i=0}^{n}
 f(a_i+b_i).f(a_i+c_i).(-1)^{(b_i+c_i).h}$$
 où 
 \begin{itemize}
-\item $a_i$ sont des mots quelquonques de n bits.
+\item $a_i$ sont des mots quelconques de n bits.
 \item $N$ est indépendante de la dimension, permet de dimensionner la
 finesse d'évaluation des coefficients.
-\item $c_i,b_i$ sont des mots quelquonques de n bits possédants leur k derniers bits à
+\item $c_i, b_i$ sont des mots quelconques de n bits possédants leur k derniers bits à
 0.
 \end{itemize}
 \end{defi}
 
 \begin{theo}\cite{Vaudenay}
-$akmv(c,\delta)$ est un bon estimateur de la somme des carrés modules des coefficients
-de fourier :
-$$\sum_{\alpha\in I(c,\delta)} |\hat{f}(\alpha)|^2 - \gamma.2^{2.k}\leq
-2^{2.k}.akmv(c,\delta)\leq
-\sum_{\alpha\in I(c,\delta)} |\hat{f}(\alpha)|^2 +  \gamma.2^{2.k}$$
+$akmv(c, \delta)$ est un bon estimateur de la somme des carrés modules des coefficients
+de Fourier :
+$$\sum_{\alpha\in I(c, \delta)} |\hat{f}(\alpha)|^2 - \gamma.2^{2.k}\leq
+2^{2.k}.akmv(c, \delta)\leq
+\sum_{\alpha\in I(c, \delta)} |\hat{f}(\alpha)|^2 +  \gamma.2^{2.k}$$
 \begin{itemize}
-\item $I(c,\delta)$ est l'ensemble des points qui possèdent les $\delta$
-premières coordonnées de c, et des coordonnées suivantes quelquonques.
+\item $I(c, \delta)$ est l'ensemble des points qui possèdent les $\delta$
+premières coordonnées de c, et des coordonnées suivantes quelconques.
 \item $\gamma=\frac{L_2(\hat{f})^2}{18.2.2^{2.k}}$
-\item Probabilité d'echec plus petite que $2.\epsilon'$ 
+\item Probabilité d'échec plus petite que $2.\epsilon'$ 
 \item $N=2.\gamma^{-2}.ln(\frac{1}{\epsilon'})$
 \item Erreur bornée par $\frac{1}{18.2}.L_2(\hat{f})^2$ 
 \end{itemize} 
 \end{theo}
+
 
 Dans le LPN on ne peut pas évaluer notre fonction n'importe où, donc on
 ne peut pas effectuer l'algorithme de SFT \cite{Akavia}. Cependant on peut calculer
@@ -500,7 +991,7 @@ coefficient de Fourier}.
 \begin{itemize}
 \item \cite{BKW} part avec $2^\frac{n}{log(n)}$ samples, et effectue une
 réduction de taille avec $a=log(n)$, $b = \frac{n}{log(n)}$.
- Puis ensuite effectue un vote à la majorité. La complexité
+Ensuite il fait un vote à la majorité. La complexité
 est de $O(2^{O(\frac {n} {log(n)})})$   
 \item \cite{LF} commence de la même manière et termine par une
 transformation de Walsh-Hadamard. La complexité est de
@@ -515,60 +1006,59 @@ chaque essaie, ils effectuent quelques étapes de BKW (Pour ordre de
 grandeur, Kirchner propose
 pour $n=768$, $\epsilon=0.05$ de prendre $a=3$, $b=8$.)
 \\Le principal avantage de cette approche est la diminution de la
-quantité mémoire necessaire. Le nombre de queries ne diminue pas
-beaucoup, mais le plongement dans une étape de randomization permet
+quantité mémoire nécessaire. Le nombre de queries ne diminue pas
+beaucoup, mais le plongement dans une étape de randomisation permet
 d'économiser beaucoup de mémoire. C'est une amélioration significative
 puisque c'était le principal bottleneck dans BKW, où la mémoire coûtait
 aussi en $O(2^\frac{n}{log(n)})$ 
 \\\\
-Dans \cite{Bernstein}, ils propose de rajouter une structure
+Dans \cite{Bernstein}, ils proposent de rajouter une structure
 d'anneau : le ring-LPN. Ceci permettant de diminuer le coup des produits
 matriciels.  
 
 \subsubsection{Amélioration asymptotique par SFT : Contribution}
-\cite{Vaudenay}
 Si on garde la même trame que \cite{Kirchner} et \cite{Bernstein}, mais que l'on utilise notre
 capacité à tester un secret en $O(n)$ vu dans~\ref{SFT}, on peut alors faire une phase
-finale qui consiste à énumérer tous les mots de poid de hamming faible (les plus
+finale qui consiste à énumérer tous les mots de poids de Hamming faible (les plus
 probables), et de les tester. Ainsi, si le secret possède $w$ bits à $1$
 dans ses $n-ab$ derniers bits,
 la complexité de la phase finale est de $\binom{n-ab}{w}.n$, \footnote{Comme dans
 \cite{LF}, \cite{BKW}, \cite{Kirchner}, \cite{Bernstein}, on ne s'attarde
-pas à établir la complexité pour retrouver les $ab$ premiers bits.}
+pas à établir la complexité pour retrouver les $a.b$ premiers bits.}
 
-\paragraph{Optimisation des paramètres du précèdent.}
+\paragraph{Optimisation des paramètres de l'algorithme précèdent.}
 Donc si on prend notre dernier algorithme, sa complexité générale est
 la suivante :
 $$\underbrace{(\sum_{i=0}^{w}\binom{n-a.b}{i}.\epsilon^i.(1-\epsilon)^{n-a.b-i})^{-1}}_{\text{Attente
 de secret w sparse}}.
 (\underbrace{n^3}_{\text{Réduction sparse}} +
 \underbrace{a.(a.2^b+\frac{n-a.b}{(1-2.\epsilon)^{2^a}})
-}_{\text{Réduction BKW}} + \underbrace{\sum_{i=0}^w \binom{n-a.b}{i}.(n-a.b)}_{\text{Rétrouver solution par SFT}} )$$ 
+}_{\text{Réduction BKW}} + \underbrace{\sum_{i=0}^w \binom{n-a.b}{i}.(n-a.b)}_{\text{Retrouver solution par SFT}} )$$ 
 Cette complexité est en fait simplifiée : elle est donnée ici en O, alors
 que normalement il y a des constantes qui dépendent très fortement de
 l'implémentation\footnote{Notamment des facteurs 1/32 ou 1/64 par
-endroit si on fait des représentation compactes avec des entiers}. On sent
+endroit si on fait des représentations compactes avec des entiers}. On sent
 donc bien qu'il faut optimiser en a, b, w, à $\epsilon$ et n fixés. Pour
-celà une étude analytique semble très délicate\footnote{Surtout qu'en
+cela une étude analytique semble très délicate\footnote{Surtout qu'en
 crypto les paramètres sont assez petits donc il ne fait aucun sens de
 faire une étude asymptotique}. En pratique, l'espace des paramètres à
 optimiser étant fini un petit script OCaml permet de donner les valeurs
 optimales. 
-\section{Implémentation}
+\section{Implantations}
 \subsection{C}
 \subsubsection{Éléments de bases pour LPN}
 J'ai programmé en C un ensemble de fonctions pour pouvoir effectuer des
 tests sur le LPN. L'implémentation est compacte : je stocke dans un
 entier non-signé 32 valeurs binaires. Cette représentation compacte était
 faite en prévision du coût mémoire des attaques BKW-like. Basé sur cette représentation, j'ai
-programmé l'ensemble des outils de bases d'algèbre linéaire necessaires
+programmé l'ensemble des outils de bases d'algèbre linéaire nécessaires
 simples :
 \\
 \begin{itemize}
 \item Produit scalaire et matriciel naif 
-\item Elimination de Gauss-Jordan
+\item Élimination de Gauss-Jordan
 \item Ajout d'un $\epsilon$-bruit.
-\item Génération des mots de poid de hamming fixé
+\item Génération des mots de poids de Hamming fixé
 \item Tri rapide sur les bits entre k et (k+i)
 \item et de nombreux tests divers et variés comme l'étape de réduction de
 BKW
@@ -576,23 +1066,23 @@ BKW
 
 \subsubsection{Phase finale du LPN en C}
 J'ai implémenté en C, la phase finale qui consiste à faire une recherche
-exhaustive en testant les mots de poid fixé, en $O(n)$. Via un calcul
+exhaustive en testant les mots de poids fixé, en $O(n)$. Via un calcul
 d'approximation de coefficients de Fourier, expliquée en~\ref{SFT}.
 \\
 Cette phase est donc composée d'une recherche exhaustive sur des mots de
-poid de hamming petit fixé. Pour paralleliser cette implémentation, j'ai
-mis en bijection les mots de poid de hamming fixé et l'intervalle
-d'entier $[0, C_{n}^{w}]$, de ce fait les itérations deviennent
-entièrement indépendantes. Permettant une parallelisation à une première
+poids de Hamming petit fixé. Pour paralléliser cette implémentation, j'ai
+mis en bijection les mots de poids de Hamming fixé et l'intervalle
+d'entier $[1, C_{n}^{w}]$, de ce fait les itérations deviennent
+entièrement indépendantes, permettant une parallélisation à une première
 échelle via MPI.
-A une deuxième échelle et de manière transparente, j'ai utilisé openMP
-pour paralleliser sur plusieurs coeurs, les boucles que doivent faire
+À une deuxième échelle et de manière transparente, j'ai utilisé openMP
+pour paralléliser sur plusieurs coeurs les boucles que doivent faire
 chaque esclave. 
 \\\\
 Autre avantage : l'utilisation de MPI permet de broadcaster facilement
 l'instance du LPN construite par le maitre à toutes les machines de la
 grappe. En pratique le calcul a été fait sur 8 machines de
-l'ens\footnote{The super-new spice machines}(2x Intel Xeon E5649 @
+l'ENS\footnote{The super-new spice machines}(2x Intel Xeon E5649 @
 2.53GHz).  
 \begin{figure}
 \caption{Temps d'exécution en dimension n avec un secret k-sparse}
@@ -617,7 +1107,7 @@ l'ens\footnote{The super-new spice machines}(2x Intel Xeon E5649 @
 
 
 \subsection{Sage : c'est le bien}
-Une fois compilé (9h tout de même\dots), Sage est particulièrement efficace
+ Une fois compilé (9 h tout de même\dots), Sage est particulièrement efficace
 pour tester rapidement des idées : je pense à un facteur de compression
 sur la taille du code
 entre 10 et 100. De plus Sage
@@ -628,9 +1118,9 @@ matricielle, SAT-solver etc\dots
 \subsubsection{Systèmes polynomiaux}\label{ISAT}
 Le but fut d'implémenter ce que nous avons proposé en~\ref{SAT}
 \\\\
-En Sage, on déclare l'anneau dans lequel on travail, la méthode de
+En Sage, on déclare l'anneau dans lequel on travaille, la méthode de
 résolution du système et c'est fini. Autrement dit l'essentiel du travail
-est de générer les équations : de traiter les données. Etant donné que la
+est de générer les équations : de traiter les données. Étant donné que la
 complexité de SAT et Groëbner est très mal connue, le but était
 uniquement d'effectuer un test, pour savoir si on se trouvait dans une
 zone ou les méthodes usuelles se "comportent bien", ou pas\footnote{Je
@@ -638,24 +1128,24 @@ présente ici chronologiquement ce que j'ai compris.}.
 J'ai pris une instance du LPN de taille 32, générée en C, et ensuite j'ai
 traité ces données via OCaml pour les formater pour Sage\footnote{Il
 était possible de tout faire directement en Sage, mais je n'avais pas
-fait de OCaml depuis plusieurs semaines!}. Les équations polynomiales
-étaient toutes de degrès 2 : produit des équations $2.i$ et $2.i+1$
+fait d'OCaml depuis plusieurs semaines!}. Les équations polynomiales
+étaient toutes de degrés 2 : produit des équations $2.i$ et $2.i+1$
 linéaire du problème LPN initial.
 \paragraph{Résolution via Groëbner}
-Exécuté sur ma machine plusieurs heures, ça n'a pas terminé. Peut-etre 
+Exécuté sur ma machine plusieurs heures, ça n'a pas terminé. Peut-être 
 que le grand nombre de variables dans chaque équation est la cause de
-l'echec de la résolution via
+l'échec de la résolution via
 bases de Groëbner.
 \paragraph{Résolution via SAT}
-Via SAT, l'instance a été résolue en une dizaine de minutes. Ceci est
-assez lent, à peine mieux qu'une recherche exhaustive. 
-%TODO : PRECISER
+Via SAT, l'instance a été résolue en une dizaine de minutes. Ceci
+correspond environ au temps necessaire à une recherche exhaustive, c'est
+trop lent pour être envisageable, aucun miracle n'est arrivé. 
 \\
 Après avoir regardé
 un peu l'état de l'art du SAT solving, notamment \cite{Mezard}, il semble qu'une fois encore la
 structure des entrées liées au LPN est très différente des données
 classiques que l'on donne au SAT solver : la plupart du temps il y a un
-nombre très réduit de littéraux dans chaque clauses, bien sur on peut se
+nombre très réduit de littéraux dans chaque clause, bien sur on peut se
 ramener à ce cas en introduisant de nouvelles variables, mais alors le
 rapport $\alpha=\frac {\sharp Clauses}{\sharp Variables}$ devient plus grand.
 Or, \cite{Dubois} étudie que lorsque le nombre de variables tend vers
@@ -663,7 +1153,7 @@ l'infini, presque toutes (au sens probabiliste) les
 instances avec $\alpha > 4.506$ sont insatisfiables. Ce sont des
 "hard-SAT"\footnote{Beaucoup de cycles dans le graphe de représentation}.
 
-Ces lectures à posteriori\footnote{Toujours la difficulté de savoir s'il
+Ces lectures a posteriori\footnote{Toujours la difficulté de savoir s'il
 est plus rapide d'implémenter pour tester, ou de trouver une biblio sur
 le sujet} justifient que cette approche ne passera pas pour
 des paramètres plus gros. 
@@ -679,12 +1169,12 @@ effectuer LLL, qui ne fait que des combinaisons linéaires, puis se
 replonger dans $GF(2)^n$.
 \\ 
 On remarque qu'il y a une relative corrélation entre un vecteur court de
-$GF(2)^n$ avec la distance de hamming, et avec la norme 2. De plus
+$GF(2)^n$ avec la distance de Hamming, et avec la norme 2. De plus
 expérimentalement, LLL donne des vecteurs à valeur très majoritairement
 dans $\{-1,0,1\}$, donc cette méthode\footnote{Piquée à Martin Albrecht}
 est expérimentalement justifiée.
 \\
-Le principale bottleneck de cette méthode est le facteur d'approximation
+Le principal bottleneck de cette méthode est le facteur d'approximation
 de LLL, qui trouve un plus court vecteur à un facteur au plus 
 $(1.08)^{\frac {n-1} {2}}$. Ainsi très rapidement lorsque la
 dimension augmente, ou que le bruit augmente trop, LLL n'assure plus
@@ -716,7 +1206,7 @@ réalisés sur ma machine personnelle (AMD V120 @ 2.2GHz)
 \end{figure}
 
 \begin{figure}
-\caption{Nombre d'instances necessaires avant réussite}
+\caption{Nombre d'instances nécessaires avant réussite}
 \begin{center}
 \begin{tabular}{|c |c | c | c | c | }
 \hline
