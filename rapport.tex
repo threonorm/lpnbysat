@@ -1,6 +1,7 @@
 \documentclass{article}		%Petite taille de doc
 \usepackage{fullpage}
 \usepackage[francais]{babel}	%Doc fr
+\usepackage{float}
 \usepackage{todonotes}
 \usepackage{tikz}
 \usepackage{framed}
@@ -19,12 +20,14 @@
 \theoremstyle{plain}
 \newtheorem{coro}{Corollaire}
 \theoremstyle{plain}
-
+\newtheorem{lemma}{Lemme}
+\theoremstyle{plain}
 \newtheorem{remark}{Remarque}
 \theoremstyle{plain}
 
 \begin{document}
-\title{Learning Parities with Noise}
+\title{Étude du problème \emph{Learning Parities with
+Noise}}
 \author{Thomas Bourgeat}
 \date\today
 \maketitle
@@ -43,10 +46,13 @@ signature, du chiffrement ou de l'authentification. Ces protocoles ne
 doivent pas introduire de faiblesses dans le système utilisé : ils doivent
 être aussi difficile à casser que le problème initialement choisit est
 difficile à résoudre.
-Dans la suite nous étudierons d'abord de l'authentification et du
-chiffrement. Enfin, nous donnerons une idée de la difficulté du
+Dans la suite nous étudierons d'abord des schémas d'authentification et du
+chiffrement. Puis nous donnerons une idée de la difficulté du
 problème du LPN par une vision des algorithmes actuels et plusieurs
-réductions à d'autres problèmes connus.
+réductions à d'autres problèmes connus. Cette méthode de travail par
+étude des protocoles designés pour le LPN puis des algorithmes qui
+résolvent le LPN va nous permettre de mieux cerner le problème. Ainsi on
+isolera ce qui font \emph{les} difficulté du LPN et les précautions d'emploi. 
 \paragraph{Notation et mise en forme}
 Dans ce document certains résultats sont isolés. Ce choix a été fait pour
 mettre en évidence certains résultats assez remarquables. Notamment
@@ -104,9 +110,9 @@ $(A,b,\nu)$
 \subparagraph{Chiffrement}
 
 \begin{itemize}
-\item Si on veut chiffrer 0, envoyer un vecteur $\xi$ tiré selon une loi
+\item Si on veut chiffrer $1$, envoyer un vecteur $\xi_1$ tiré selon une loi
 uniforme
-\item Si on veut chiffrer 1, envoyer $\xi=y+e'$ où $e'$ est un mot aléatoire
+\item Si on veut chiffrer $0$, envoyer $\xi_0=y+e'$ où $e'$ est un mot aléatoire
 de poids k, et $y\in Ker((b|A)^t)$
 \end{itemize}
 
@@ -129,15 +135,144 @@ importante. Alors que dans ce cryptosystème, elle est donnée.
 \end{remark}
 
 \begin{theo}
-Ce cryptosystème est correct et sécurisé sous l'hypothèse (conjecture 3.
-de \cite{Alekh}) que l'ensemble
-des vecteurs à distance k d'un noyau d'une matrice aléatoire et la loi
-uniforme sont indistinguables. 
-\end{theo}
-\begin{proof}
-\end{proof}
-\paragraph{Cryptosystème 2}
+Ce cryptosystème est correct. Il est sécurisé sous l'hypothèse (conjecture 3.
+de \cite{Alekh}) que la loi uniforme sur
+les vecteurs à distance $k$ de l'image d'une matrice aléatoire et la loi
+uniforme sur ceux à distance $k+1$ sont
+indistinguables. \cite{Alekh} montre que sous les hypothèses de cette
+conjecture, la loi uniforme sur les vecteurs à distance $k$ de l'image
+d'une matrice aléatoire est indistinguable d'une loi uniforme.
 
+
+\end{theo}
+
+\begin{framed}
+Un résultat nécessaire pour la démonstration :
+\begin{defi}
+Soit $\xi_2, \xi_2$ deux variables
+aléatoires, 
+ $\rho(\xi_1,\xi_2)= max_A(x)
+|Pr(A(\xi_1)=1)-Pr(A(\xi_2)=1)|$ s'appelle la distance statistique sous
+le test A. 
+\\\\
+On dit que deux suites $(\xi_{1,n})_n, (\xi_{2,n})_n$ de distributions sont computationnellement $f(n)$-proches,
+si pour tout algorithme polynomial C, il existe $N$ tel que 
+$$\forall n>N, |Pr(C(\xi_{1,n})=1)-Pr(C(\xi_{2,n})=1)|\leq f(n)$$
+On note alors $\rho_c(\xi_1,\xi_2) \leq f(n)$.
+\\
+Enfin on dit que des distributions sont computationellements
+indistinguables si leur distance est inférieur à $\frac{1}{n^{\Omega(1)}}$
+
+
+\end{defi}
+\begin{theo}
+L'indistinguabilité est transitive : soit $\xi_1,\xi_2,\xi_3$ trois suites de
+variables aléatoires telles que 
+$$\begin{cases}
+\rho_c(\xi_1,\xi_2)\leq f_1(n)\\
+\rho_c(\xi_2,\xi_3)\leq f_2(n)
+\end{cases}
+$$
+Alors on a :
+$$\rho_c(\xi_1,\xi_3)\leq f_1(n)+f_2(n)$$
+\end{theo}
+
+\begin{proof}
+Conséquence de : 
+$$|(a-b)-(c-b)|\leq|a-b|+|c-b|$$
+\end{proof}
+\end{framed}
+
+\begin{proof}
+\begin{itemize}
+\item \emph{Correction}
+\\
+La probabilité que $e^t.\xi_1=0$ est exactement $\frac{1}{2}$. Or la
+probabilité que $e^t.\xi_0=0$ est différente :
+\begin{center}
+\begin{tabular}{c c c}
+   $e^t.\xi_0$ &$ =$ &$ e^t.(y+e') $\\
+      & $=$&$ e^t.e'$
+  \end{tabular}
+ \end{center}
+Or $e$ et $e'$ sont aléatoires de poids $k$, la probabilité qu'ils ont un 1
+en commun est inférieur à $(1-\frac{k}{n})^k=o(1)$.
+Autrement dit pour pouvoir utiliser ce cryptosystème il faut réitérer le
+processus, pour que le destinataire puisse différentier des Bernoulli 1/2
+de Bernoulli $o(1)$.
+\item \emph{Intuition de sécurité}
+\\
+Tout d'abord, $(b|A)$ est indistinguable d'une matrice aléatoire
+$\hat{A}$. 
+
+
+Soit $\hat{\xi}$ un vecteur tiré aléatoire tiré selon la même
+loi que $\xi_0$ sauf que $\hat{y}\in Ker(\hat{A})$. Alors $(\xi_0,(b|A))$
+et $(\hat{\xi},\hat{A})$ sont indistinguables.
+De plus, on peut voir le noyau de $\hat{A}$ comme l'image d'une matrice
+$B$, donc $\hat{\xi}=B.z+\hat{e'}$ où $z$ est tiré uniformément dans tout
+l'espace de départ de B, et 
+$\hat{e'}$ uniformément dans les mots de poids k et de taille m.
+\\
+Ainsi il est difficile de distinguer $(\hat{\xi},\hat{A})$ de
+$(\xi_1,\hat{A})$, puisqu'on est dans le cadre de la conjecture.
+Enfin il est difficile de distinguer $(\xi_1,\hat{A})$ de $(\xi_1,
+(b|A))$ d'après le début de la preuve.
+\\\\
+Donc au final, il est donc difficile de
+distinguer $(\xi_0,(b|A))$ de $(\xi_1 ,(b|A) )$.
+\end{itemize}
+\end{proof}
+
+
+\paragraph{Cryptosystème 2 : utilisation d'un bon code correcteur}
+
+Soit $m=2.n, k=n^{\frac{1}{2}-\epsilon}$, et H la matrice de parité
+(noyau) d'un bon code correcteur d'erreur pour lequel il existe un
+algorithme de décodage efficace\footnote{Par exemple un LDPC.}.
+\\\\Génération des clefs :
+\begin{itemize}
+\item $A\in_U \mathcal{M}_{m,n}(GF(2))$, $X\in_U
+\mathcal{M}_{n,m}(GF(2))$, $E\in \mathcal{M}_{m,m}(GF(2))$ où $E$
+contient exactement $k$ 1 par lignes et ces matrices sont telles que
+$M=A.X+E$ soit inversible. (On recommence sinon)
+\item On appelle $V=Ker(A^t.(M^t)^{-1})\cap Ker(H)$ $r=dim(v)$.\item On
+suppose sans perte de généralité que r est pair et on choisit une
+partition $V=V_1 \oplus V_2$ telle que $dim(V_1)=dim(V_2)=r/2$
+\item La clef publique est $(M,A,V_1,V_2)$. 
+\item La clef privée est $(M,A,V_1,V_2,E)$.
+\end{itemize}
+
+\subparagraph{Chiffrement}
+Un message à chiffrer fait $r/2$ bits et on l'identifie avec un vecteur de
+$v_1 \in V_1$. Pour le chiffrer calculer $\xi (v_1)=
+(M^t)^{-1}(v_1+v_2)+e'$ où $e'$ est un vecteur aléatoire de poids k et où
+$v_2$ et choisit uniformément dans $V_2$.
+
+\subparagraph{Déchiffrement}
+\begin{itemize}
+\item
+Calculer $\hat{v}=E^t.\xi$
+\item Trouver le mot code $v$ le plus proche de
+$\hat{v}$ en utilisant l'algorithme de décodage. 
+\item Projeter v sur $V_1$ pour retrouver le mot message initial.
+\end{itemize}
+
+\begin{intui}
+Ce schéma est correct avec grande probabilité. En effet 
+\begin{center}
+\begin{tabular}{r c l}
+ $E^t.\xi - (v_0+v_1)$ & $=$&
+$E^t.((M^t)^{-1}.(v_0+v_1)+e')-M^t(M^t)^{-1}(v_0+v_1)$ \\
+& $=$ & $(E^t-M^t).(M^t)^{-1}(v_0+v_1)+E^t.e'$\\
+& $=$ & $X^t.A^t.(M^t)^{-1}(v_0+v_1)+E^t.e'$\\
+& $=$ & $E^t.e'$
+\end{tabular}
+\end{center}
+Et alors vu qu'il n'y a que k bits à 1 par lignes de E, on obtient un mot
+de poids de hamming faible avec forte probabilité, qui permet de trouver
+le bon mot code grâce au code correcteur d'erreur. 
+\end{intui}
 \paragraph{Faisabilité (à titre informatif)}
 \cite{Dam} propose une comparaison entre une implémentation de RSA 1024
 bits et un LPN $n=768,\eta=0.015$. Les performances du LPN sont moins
@@ -145,14 +280,16 @@ bonnes, entre un facteur 10 et un facteur 100. Cependant \cite{Dam} dit
 que ce n'est pas redhibitoire. Néanmoins, les paramètres choisis dans
 \cite{Dam} sont criticables. En effet ils ont choisi de se baser sur
 \cite{LF} qui propose un algorithme performant pour des bruits
-importants. Le choix de $\eta=0.015$ donne l'avantage a des algorithmes
+importants. Le choix de $\eta=0.015$ donne l'avantage à des algorithmes
 par recherche exhaustive type \cite{Valiant},\cite{Grigo} ou même plus
 concret \cite{Gol}. Ainsi la sécurité annonçée n'est pas du tout de
 $2^{80}$.
-\subsubsection{Symétrique}
 
+\subsubsection{Symétrique : LPN-C}
 
-
+Dans sa thèse Yannick Seurin a proposé un schéma de chiffrement
+symétrique basé sur le LPN. On va voir qu'ici le schéma semble utiliser
+le LPN différement de \cite{Alekh}.
 
 
 \subsection{Authentification clef privé}
@@ -161,6 +298,8 @@ de la littérature traite de l'authentification. Dans la suite on appelle
 Tag le dispositif qui souhaite s'authentifier, et Reader celui auprès de qui le
 Tag essaie de s'authentifier.
 
+Cette partie est essentiellement un rapport des articles \cite{Lyu} et
+\cite{Katz} dont la lecture consistait une partie de mon mémoire d'info-math.
 
 \subsubsection{HB}
 L'exemple le plus simple consiste à choisir le squelette suivant, très
@@ -181,6 +320,11 @@ faut simplement rajouter une couche probabiliste, et on obtient le
 protocole HB : figure~\ref{hb}. L'idée est donc de répéter l'opération,
 et de voir si le Tag réussi une proportion environ $1+\epsilon$ des
 challenges. Si c'est le cas, on accepte l'authentification.
+\\Le schéma est paramétré par $l,u$ les lower et upper bound
+d'acceptation du schéma. Attention momentanément $k$ est la taille de
+clef, et $n$ est le nombre de répetitions du schéma.
+
+
 \begin{figure}
 \centering
 \begin{tikzpicture}
@@ -218,7 +362,7 @@ Pour la plupart des preuves de sécurité qui vont suivre, on va utiliser
 le lemme suivant, qui ramène le problème du LPN a un problème de
 distinguabilité.
 
-\begin{theo}
+\begin{theo}Lemme technique \label{lemmetechnique}\\
 Supposons qu'il existe un algorithme D qui en faisant $q$ queries,
 s'exécutant en un temps t, arrive à distinguer une distribution uniformé
 d'une distribution sortie d'un oracle LPN :
@@ -230,12 +374,130 @@ $O(t.k.\delta^{-2}.log(k))$:
 $$Pr(M^{A_{s,\epsilon}}(1^k)=s)\geq\delta/4 $$
 \end{theo}
 \begin{proof}
+\todo[inline]{PReciser N}
+L'algorithme M est le suivant :
+\begin{enumerate}
+\item M choisit les évènements d'aléa $\omega$ pour D de manière
+représentative, qui sera fixé pour toute
+l'exécution. (car D peut être randomisé).
+\item M execute $D$ sur l'oracle uniforme, 
+il l'exécute N fois pour obtenir une estimation de la probabilité que D
+renvoit 1.
+\item M demande q.N samples de l'oracle LPN : $\{(a_{1,j},z_{1,j})\}_{j=1}^q,
+\dots,\{(a_{N,j},z_{N,j})\}_{j=1}^q$ Alors pour tous les bits de clef il
+fait 
+\begin{enumerate}
+\item Exécution N fois de D, en
+utilisant un ensemble frais de samples $\{(a_{j},z_{j})\}_{j=1}^q$ pour
+répondre aux
+queries que D fait à l'oracle à chaque fois.  Pour répondre à la $j$-ième
+querie de D de chaque itération, choisir un bit aléatoire $c_j$ et
+renvoyer $(a_j \oplus (c_j.e_j),z_j)$ où les $e_j$ sont les vecteurs de
+la base canonique. Obtenir une estimation $p_i$ de la probabilité que D
+renvoit $1$ avec un tel oracle.
+\item Si $|p_i-p| \geq \delta/4$ alors $s'_i=0$ sinon $s'_i=1$
+\end{enumerate}
+\item Renvoyer $s'=(s'_1,\dots,s'_k)$
+\end{enumerate}
+
+\emph{Correction de l'algorithme:}
+\\
+Tout d'abord par un argument d'espérance, avec probabilité au moins
+$\delta/2$ sur le choix de s et d'évènements $\omega$, on a :
+$$|Pr[D^{A_{s,\epsilon}}(1^k,\omega)=1]-Pr[D^{U_{k+1}}(1^k,\omega)|\geq
+\frac{\delta}{2}$$
+L'idée est de se restreindre au $s,\omega$ pour lesquels cette équation est
+valide et montrer que dans ces cas là, avec probabilité au moins 1/2,
+l'algorithme fonctionne.
+\\
+D'une part, on a avec probabilité $1-O(1/k)$ :$$|Pr[D^{U_{k+1}}(2^k,\omega)=1]-p|\leq \delta/16 $$
+Puis si on appelle $hyb_i$ l'oracle fabriquée dans l'étape 3 pour le bit
+i de clef, on a avec
+probabilité $1-O(1/k)$:
+$$|Pr[D^{hyb_i}(1^k,\omega)=1]-p_i|\leq \delta/16 $$
+Ainsi via Union Bound (on passe au complémentaire), on a avec probabilité au moins $1/2$, les deux
+dernières équations simultanément vraies. On suppose qu'on est dans ce
+cas.\\
+\\
+On remarque que si $s_i=0$ alors $hyb_i=A_{s,\epsilon}$ tandis que si
+$s_i=1$ alors $hyb_i=U_{k+1}$. Et donc :
+\begin{itemize}
+\item Si $s_i=0$ par la toute première
+équation de la preuve on a:
+$$ |Pr[D^{hyb_i}(1^k,\omega)]-Pr[D^{U_{k+}}(1^k,\omega)=1]|\geq \delta/2$$ 
+et donc $|p_i-p|\geq
+\frac{\delta}{2}-2.\frac{\delta}{16}=3\frac{\delta}{8}>\frac{\delta}{4}$ donc
+$s'_i=s'i=0$.
+\item Si $s_i=1$ 
+$$ |Pr[D^{hyb_i}(1^k,\omega)]=Pr[D^{U_{k+}}(1^k,\omega)=1]|$$ donc
+$|p_i-p|\leq 2.\frac{\delta}{16} =\frac{\delta}{8} <\frac{\delta} {4}$ et
+donc $s'_i=s_i=1$.
+\end{itemize}
+On a donc prouvé qu'avec probabilité au moins
+$\frac{\delta}{2}.\frac{1}{2}$ l'algorithme renvoyait le bon secret.
 \end{proof}
 \end{framed}
 
-
-
-\paragraph{Une attaque active}
+\begin{framed}
+Autre notion que l'on va beaucoup utiliser, la notion d'avantage pour un
+adversaire.
+\begin{defi}
+On définit l'avantage (dans le modèle passif pour le moment) d'un adversaire sur le
+protocole HB comme : 
+$$Adv_{\mathcal{A}} \stackrel{def}{=} Pr[\text{Reader accepte une
+tentative de l'attaquant}]-\delta^{\star}_{\epsilon,s,l,u,n}$$
+où
+$\delta^{\star}_{\epsilon,s,l,u,n}=2^{-n}.\sum\limits_{i=l \dots
+u}\binom{n}{i}$ qui représente la propabilité de réussite en essayant au
+hasard. Dit d'une manière différente, cette quantité évalue
+l'\emph{avantage} que peut avoir un adversaire par rapport à faire une
+authentification au hasard.
+\end{defi}
+\end{framed}
+\begin{theo}
+Supposons qu'il existe un adversaire $\mathcal{A}$ qui avec au plus $q$
+exécutions du protocole HB, s'exécute en un temps t et acquiert un
+avantage $Adv_{\mathcal{A}}(\epsilon,l,u,n)\geq \delta$. alors il existe
+un algorithme D, utilisant $(q+1).n$ queries, s'exécutant en $O(t)$ et
+tel que 
+$$|Pr[D^{A_{s,\epsilon}}(1^k)=1]-Pr[D^{U_{k+1}}(1^k)=2]|\geq \delta +
+\delta^{\star}_{\epsilon,l,u,n}-\epsilon_c-2^{-n}.\sum_{i=0}^{2.u}
+\binom{n}{i}$$
+avec $\epsilon_c$ la probabilité d'un Tag honnête soit
+rejeté\footnote{Donc
+il ne faut pas prendre $l$ et $u$ trop resserrés autour de $\epsilon.n$ pour éviter
+de rejeter des bon tags.}.
+\end{theo}
+\begin{proof}
+Grossièrement, l'idée de ce type de preuve et de montrer que s'il existe un tel
+attaquant, alors cet attaquant peut fabriquer un algorithme pour
+distinguer un oracle LPN d'un oracle random. Donc pour ça il va simuler un protocole HB, et l'attaquer. La
+simulation sera choisie dépendant de l'instance LPN à résoudre  de telle manière que réussir à authentifier sera
+la même chose que distinguer un LPN d'un uniforme.
+\\\\ Étant donné l'accès à un oracle qui retourne les échantillons
+$(a,z)$. On procède de la façon suivante: 
+\begin{enumerate}
+\item D exécute la première phase de $\mathcal{A}$. Chaque fois que
+l'attaquant demande à voir un protocole, D obtient les samples et les
+donne à l'attaquant.
+\item Quand l'attaquant est prêt, D récupère n autres samples de l'oracle
+: $\{(\bar{a_i},\bar{z_i})\}_{i=1}^{n}$. D envoit le challenge ainsi récupéré à
+l'attaquant, qui donne une réponse $Z'=(z'_1,\dots,z'_n)$
+\item D répond $1$ si $\bar{Z}$ diffère de $Z'$ pour au plus 2u entrées.
+\end{enumerate}
+Moralement, l'algorithme consiste à tester l'attaquant : si il échoue de
+beaucoup, c'est qu'on lui a pas donné une bonne entrée, donc que c'est un
+uniforme. Si il réussi ou presque, c'est qu'on lui a donné un vrai oracle LPN.
+\\
+De manière plus calculatoire : si l'oracle est aléatoire, l'analyse est
+rapide. Si c'est un vrai oracle LPN : avec probabilité au moins
+$\delta+\delta^{\star}_{\epsilon,l,u,n}$ $Z'$ et
+$Z^{\star}=(s.\bar{a_1},\dots,s.\bar{a_n})$ diffèrent
+d'au plus u entrées. De plus $\bar{Z}$ et $Z^{\star}$ diffèrent d'au plus
+u positions avec probabilité $1-\epsilon_c$. Ce qui nous permet de
+conclure.
+\end{proof}
+\paragraph{Une attaque active contre HB}
 Dans le modèle actif il y a une première phase en plus, durant laquelle
 l'attaquant peut intéragir avec le Tag.
 \\\\
@@ -247,13 +509,292 @@ bits de clef.
 \\\\ 
 C'est un exemple de cas où la couche de protocole est la faiblesse du
 système : elle a rendu inutile la difficulté du LPN. 
-\subsubsection{HB sharp}
+\subsubsection{HB\#}
+Pour corriger le défaut du protocole HB, l'idée est de faire un protocole
+a deux clefs, qui empechera la première phase d'une attaque active
+d'apporter trop d'information. Le protocole est présenté dans la
+figure~\ref{hbsharp}. Le deux clefs font une taille $k$. Et momentanément
+$n$ est le nombre de répétitions du protocole. 
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\draw (-0.5,1) node[above] {Tag$(s_1,s_2,\epsilon)$};
+\draw (2.5,1) node[above] {Reader$(s_1,s_2,\epsilon)$};
+ \draw[->] (0,0.25) -- (2,0.25);
+ \draw[<-] (0,-0.25) -- (2,-0.25);
+\draw[->] (0,-1) -- (2,-1);
+\draw (1,0.25) node[above] {$b$};
+\draw (1,-0.25) node[above] {$a$};
+\draw (1,-1) node[above] {$z$};
+\draw (-1,0.25) node {$b\leftarrow\{0,1\}^k$};
+\draw (3,0) node {$a\leftarrow\{0,1\}^k$};
+\draw (-1,-0.75) node {$\nu\leftarrow Ber(\epsilon)$};
+\draw (-1.,-1.25) node {$z:= a.s_1+b.s_2+\nu$};
+\draw (3.5,-1) node {$z\stackrel{?}{=}a.s_1+b.s_2$};
+\end{tikzpicture}
+\caption{Protocole HB\#}
+\label{hbsharp}
+\end{figure}
 \paragraph{Sécurisé dans le modèle actif}
-\paragraph{Une attaque man-in-the-middle}
+Le protocole ainsi modifié est sécurisé dans un modèle actif, comme le
+dit le théorème qui va suivre.
+\cite{Katz} est à l'origine de cette preuve assez simple de sécurité.
+\begin{defi}
+On appelle avantage d'un adversaire $\mathcal{A}$ dans le modèle actif la
+quantité :
+$$Adv_{\mathcal{A}}^{\text{Actif}} \stackrel{def}{=} Pr[\text{Reader accepte une
+tentative de l'attaquant après la phase active}]-\delta^{\star}_{\epsilon,s,l,u,n}$$
+\end{defi}
+
+\begin{theo}
+S'il existe un adversaire $\mathcal{A}$ qui interagit avec le Tag au plus $q$ fois
+ et qui a un avantage
+$Adv_{\mathcal{A}}^{\text{Actif}}\geq \delta$ alors il existe un
+algorithme D qui fait $q.n$ queries, qui s'exécute en temps $O(t)$ et tel
+que : 
+$$|Pr[D^{A_{s,\epsilon}(1^k)=1}] - Pr[D^{U_{k+1}}(1^k)=1]| \geq
+(\frac{\delta+\delta_{\epsilon,l,u,n}^{\star}}{2})^3 - \frac{2^n}{2^k}
+-2^{-n}.\sum_{i=0}^{2.u} \binom{n}{i} $$
+\end{theo}
+
+\begin{proof}
+Étant donné un accès à un oracle qui donne des $(b,z)$ on procède comme
+suit :
+\begin{enumerate}
+\item D choisit $s_2$ uniformément au hasard. Ensuite il exécute la
+première phase de l'attaquant. Pour simuler cette étape d'authentification,
+il récupère un sample $(b,z)$ de son oracle, et envoit $b$ comme message
+initial. $\mathcal{A}$ répond au challenge avec un $a$, et alors D
+réponds avec $z=\bar{z}\oplus (s_2.a)$. 
+\item Quand $\mathcal{A}$ est prêt pour la deuxième phase du protocole.
+$\mathcal{A}$ envoit un message $b_1,\dots,b_n$. Alors D choisit au
+hasard $a_1^1,\dots,a_n^1$ et les envoit à l'attaquant. Il récupère
+$z_1^1,\dots,z_n^1$. Puis il recommence avec $a_1^2,\dots,a_n^2$ et
+$z_1^2,\dots,z_n^2$, \textsc{sans changer les $b_i$}, donc il sauvegarde
+l'état de l'attaquant, ce qui est possible puisque moralement l'attaquant
+c'est un programme.
+\item Soit $z_i^{\oplus}=z_i^1\oplus z_i^2$ et
+$Z^{\oplus}=(z_1^{\oplus},\dots,z_n^{\oplus})$. Soit
+$\hat{a}_i=a_i^1 \oplus a_i^2$, $\hat{z}_i=s_2.\hat{a}_i$
+et $\hat{Z}=(\hat{z}_1,\dots, \hat{z}_n)$. D renvoit 1 si et seulement si
+$Z^{\oplus}$ et $\hat{Z}$ diffèrent d'au plus $2.u$ entrées.
+\end{enumerate}
+
+\emph{Correction de l'algorithme:}\\
+\begin{itemize}
+\item \emph{Premier cas :} Disons que l'oracle est un oracle uniforme.
+Tout le monde est alors uniforme, il se passe donc que $D$ renvoit $1$
+avec probabilité au plus $$2^{-n}.\sum_{i=0}^{2u}\binom{n}{i} +
+\frac{2^n}{2^k} $$
+Le second terme vient du fait que pour avoir le $\hat{Z}$ uniforme, il
+faut que les $\hat{a}_i$ soient linéairement indépendents. Ce qui arrive
+avec probabilité $2^{n-k}$.
+\item \emph{Second cas :} Si l'oracle est un vrai oracle de LPN :
+$A_{s_1,\epsilon}$ pour un $s_1$ aléatoirement choisit, alors D génère
+une simulation parfaite de la première phase de l'attaquant. Par un
+argument d'espérance,\todo[inline]{Préciser} avec
+probabilité au moins
+$\hat{\delta}=\frac{\delta+\delta^{\star}_{\epsilon,l,u,n}}{2}$ la
+probabilité que $\mathcal{A}$ réussisse à faire une fausse
+authentification est d'au moins $\hat{\delta}$. Supposons qu'on soit dans
+ce cas. Alors la probabilité que $\mathcal{A}$ réussise à répondre à la
+fois aux queries $a_1^1,\dots,a_n^1$ et $a_1^2,\dots,a_n^2$ est d'au
+moins $\hat{\delta}^2$(Les queries sont indépendantes). Et donc ça veut
+dire que $(z_1^1,\dots,z_n^1)$ et $(z_1^2,\dots,z_n^2)$  diffèrent d'au plus u entrées de la réponse
+correcte.
+Mais alors $Z^{\oplus}$ diffère d'au plus $2u$ entrées de la somme des
+deux réponses correctes : $\hat{Z}$. Et donc on trouve la probabilité de
+$\hat{\delta}^3$ voulue.
+\end{itemize}
+\end{proof}
+
 \subsubsection{Man-in-the-middle secure authentication scheme}
+Recemment, un protocole securisé dans le modèle man-in-the-middle
+\footnote{HB\# est sécurisé seulement dans un man-in-the-middle
+restreint} a été
+proposé dans \cite{Lyu}. Le protocole n'est pas intrinsèquement basé sur le LPN, le LPN
+n'ai qu'une instanciation possible d'un schéma générale, basé sur des
+familles de fonctions \emph{Weak Pseudo Random Functions}.
+\begin{defi}
+Soit $\mathbb{F}$ un corps fini, et $\mathbb{D}$ un domaine, par exemple
+$GF(2)^n$.
+Une famille de fonction $\mathcal{H}: \mathbb{D}\rightarrow \mathbb{F}$ est dite indépendante par paires si 
+$$\forall x_1 \not= x_2\in \mathbb{D}, y_1, y_2 \in \mathbb{F},
+Pr_\mathcal{H}[h(x_1)=y_1 \wedge h(x_2)=y_2]=\frac{1}{|\mathbb{F}|^2}$$
+\end{defi}
+
+\begin{defi}
+Une famille $\mathcal{F}$ de fonctions de
+$\mathbb{D}\rightarrow\mathbb{F}$ est dite être une famille weak-PRF si
+pour n'importe quel $k$ de taille polynomial, f choisie aléatoirement, et
+$r_1,\dots,r_k\in\mathbb{D}$ choisis aléatoirement, la distribution de
+$(r_1,f(r_1)),\dots,(r_k,f(r_k))$ est computationnellement indistinguable
+de la distribution uniforme que $(\mathbb{D},\mathbb{F})^k$.
+\end{defi}
+
+En pratique on peut obtenir des familles de fonctions de ce type en rajoutant des
+bruits à des fonctions, et c'est plutôt ce type d'instanciation que nous
+utiliserons pour le LPN :
+\begin{defi}
+Soit $f$ une fonction des même domaines que précèdemment. Soit $\chi$ une
+distribution sur $\mathbb{F}$. On écrira $r\mapsto f^\chi(r)$ pour désigner la
+fonction randomisée qui génère un élément $e\in\mathbb{F}$ selon la loi
+$\chi$ et renvoit $f(r)+e$. Une famille de fonctions est dite \emph{randomized
+weak-PRF} si c'est $(r_1,f^\chi(r_1)),\dots,(r_k,f^\chi(r_k))$ qui est
+computationnellement indistinguable de la distribution uniforme.
+\end{defi}
+
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\draw (-1.2,2) node[above] {$\mathcal{F}$ une famille \emph{randomized
+weak-PRF}};
+\draw (-1,2.5) node[above] {$\mathcal{H}$ une famille indépendante par
+paires};
+\draw (-1.4,1.5) node[above] {Clefs : $f\in\mathcal{F},h\in\mathcal{H},
+s\in \mathbb{F}$};
+\draw (-0.5,1) node[above] {Tag};
+\draw (2.5,1) node[above] {Reader};
+ \draw[->] (0,0.25) -- (2,0.25);
+ \draw[<-] (0,-0.25) -- (2,-0.25);
+\draw[->] (0,-1) -- (2,-1);
+\draw (1,0.25) node[above] {$r$};
+\draw (1,-0.25) node[above] {$c$};
+\draw (1,-1) node[above] {$z$};
+\draw (-1,0.25) node {$r\leftarrow \mathbb{D}$};
+\draw (3,0) node {$c\leftarrow \mathbb{F}$};
+\draw (-1.75,-1) node {$z:=h(r).c + f^{\chi}(r).s $};
+\draw (5.2,-1) node {Accepter si $||f(r)-s^{-1}(z-h(r).c)||\leq \tau'$};
+\end{tikzpicture}
+\caption{Protocole basé sur une famille de fonctions weak-PRF}
+\label{protmitm}
+\end{figure}
+
+Dans le cadre du LPN, on peut instancier ce protocole de la manière
+suivante :
+
+\begin{defi}
+Soit $\mathcal{F}: GF(2)^n\rightarrow GF(2)^m$ une famille de fonctions
+indexées par les matrices $S\in GF(2)^{m\times n}$. Pour une fonction
+$f_S\in\mathcal{F}$ et un vecteur $r\in GF(2)^n$, on définit $f_S(r):=
+S.r$. Alors l'hypothèse du LPN difficile implique que $\mathcal{F}$ est
+une \emph{randomized weak-PRF} famille avec un bruit $Ber_\tau$. En
+effet, c'est la formalisation de l'hypothèse du LPN difficile vue à
+travers le \emph{lemme technique}~\ref{lemmetechnique}.
+\end{defi}
+
+Dans \cite{Lyu}, les auteurs proposent d'autres instantiations comme le
+Toeplitz-LPN et le Ring-LPN, dont les noms sont explicites. On ne detaillera pas ces sous problèmes.
+L'idée consiste simplement à rajouter une structure supplémentaire pour
+faciliter les implémentations, sans rendre le problème plus facile.
+
 \paragraph{Sécurisé dans le modèle man-in-the-middle}
+\begin{defi}
+Le modèle d'attaque man-in-the-middle est le modèle de la
+figure~\ref{mitm}.
+C'est le plus fort type d'adversaire : dans la première phase il peut
+interagir avec le Tag et le Reader et faire des queries de vérification
+au Reader. Dans la deuxième phase il perd accès au Tag et tente de faire
+une fausse authentification au Reader. 
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\draw (0,1) node[above] {Tag};
+\draw (2,1) node[above] {Adversaire};
+\draw (4,1) node[above] {Reader};
+\draw[->] (0.5,0) -- (2.,0.);
+\draw[<-] (0.5,-0.5) -- (2,-0.5);
+\draw[->] (0.5,-1) -- (2,-1);
+\draw[->] (2.5,0) -- (4,0);
+\draw[<-] (2.5,-0.5) -- (4,-0.5);
+\draw[->] (2.5,-1) -- (4,-1);
+\draw[<-] (2.5,-1.75) -- (4,-1.75) ;
+
+\draw (1.25,0) node[above] {$r_i$};
+\draw (1.25,-0.5) node[above] {$c_i+c'_i$};
+\draw (1.25,-1) node[above] {$z_i$};
+\draw (3.25,0) node[above] {$r_i+r'i$};
+\draw (3.25,-0.5) node[above] {$c_i$};
+\draw (3.25,-1) node[above] {$z_i+z'_i$};
+\draw (3.25, -1.75) node[above] {$reply_i=accept/reject$};
+
+\end{tikzpicture}
+\caption{Modèle MITM}
+\label{mitm}
+\end{figure}
+
+\end{defi}
+\begin{theo}
+Supposons que le protocole précèdent ait la complétude $\kappa$ et qu'il y a un
+adversaire qui réussisse à s'authentifier via ce schéma avec probabilité $\epsilon$
+en faisant au plus $q_b$ queries préalables.
+Alors il existe un algorithme,de complexité temporelle identique à
+celle de l'attaquant, qui contredit l'hypothèse
+d'indistinguabilité de la famille \emph{weak-PRF} avec un avantage
+$$\frac{1}{2}+
+\frac{1}{2}.(\kappa^{q_v-1}(\frac{\epsilon}{q_v}-\frac{1}{|\mathbb{F}|})^2-\frac{|\beta(2\tau')|}{|\mathbb{F}|})
+$$
+Où $\beta(l)=\{z\in \mathbb{F} : ||z|| \leq l\}$
+\end{theo}
+\begin{proof}
+
+On considère  la $i\leq q_v$-ième query,  la première query pour laquelle
+l'attaquant fait une fausse authentification :
+$(r'_i,c'_i,z'_i)\not=(0,0,0)$. Le but est d'utiliser l'adversaire qui
+casse le schéma avec la $i$-ème query pour décider quel distribution le
+challenger a choisit. 
+
+\end{proof}
 \paragraph{Une attaque concurrente}
+Le protocole lorsqu'il est instancié par le LPN, est cependant sensible
+à des attaques concurrentes. En effet, la famille de fonctions possède
+des propriétés homomorphiques : $f(r_1+r_2)=f(r_1)+f(r_2)$, si on suppose
+que les fonctions dans $\mathcal{H}$ sont de la forme $h(r)=s_1.r+s_2$  Alors
+l'adversaire peut opérer comme dans la figure~\ref{concur}.
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\draw (0,1) node[above] {$Tag_1$ et $Tag_2$};
+\draw (2,1) node[above] {Adversaire};
+\draw (4,1) node[above] {Reader};
+\draw[->] (-0.5,0) -- (2.,0.);
+\draw[<-] (-0.5,-0.5) -- (2,-0.5);
+\draw[->] (-0.5,-1) -- (2,-1);
+\draw[->] (2.5,0) -- (5,0);
+\draw[<-] (2.5,-0.5) -- (5,-0.5);
+\draw[->] (2.5,-1) -- (5,-1);
+
+\draw (0.78,0) node[above] {$r_{1,2}$};
+\draw (0.75,-0.5) node[above] {$r_1.c.r^{-1},c_1+c$};
+\draw (0.75,-1) node[above] {$z_{1,2}$};
+\draw (3.75,0) node[above] {$r=r_1+r_2$};
+\draw (3.75,-0.5) node[above] {$c$};
+\draw (3.75,-1) node[above] {$z_1+z_2$};
+
+\end{tikzpicture}
+\caption{Attaque concurrente}
+\label{concur}
+\end{figure}
+Le fait d'avoir deux tags simultanés permet d'utiliser la propriété
+suivante : Si l'erreur $e_1+e_2$ est petite (où les $e_i$ sont cachés
+dans les $z_i$), alors $z_1+z_2$ pourra être une réponse valide : le
+Reader accepte l'authentification si :
+$||f(r)-s^{-1}.((z_1+z_2)-(s_1.r+s_2).c)||\leq \tau'$ c'est-à-dire :
+\begin{tabular}{r c l}
+ $|| f(r)-s^{-1}.((z_1+z_2)-(s_1.r+s_2).c)||$ & $=$ &
+$||f(r)-(f(r_1)+f(r_2))-(e_1+e_2)-$\\&&$s^{-1}(s_2.(c_1+c_2)+s_1.(r_1.c_1+r_2.c_2)-(s_1.r+s_2).c)|| $ \\
+ &$=$&$||-(e_1+e_2)-s^{-1}.(s_1(r_1.c_1+(r-r_1)(c_1+c))-s_1.r.c)||$ \\
+ &$=$& $||-(e_1+e_2)-s^{-1}s_1(r.r_1.c.r^{-1}-r_1.c) || $\\
+ &$=$& $||e_1+e_2 || $\\
+\end{tabular}
+
+Ainsi l'attaquant a pu faire une fausse authentification, et la sécurité
+est compromise. 
+
 \paragraph{TODO: Réfléchir à une proposition de correction}
+\todo[inline]{A voir}
 
 \subsection{Authentification clef publique : contribution}
 De manière générale, lorsque l'on dispose d'un schéma de chiffrement à
@@ -274,16 +815,8 @@ Cette stratégie très générale permet donc de faire de l'authentification
 autant de couples (clair,chiffré) qu'il veut. Pour supprimer ce défaut,
 il faut que le Reader envoit un message aléatoire \emph{signé}.
 
-\subsection{Signature par LPN : contribution}
-\todo[inline]{Réfléchir à l'interet}
-Pour faire de la signature de message, le LPN peut-être intéressant. Il
-existe traditionnellement un méthode pour transformer un schéma
-d'authentification en schéma de signature.
 
-Ici on peut aussi prendre notre message, le découper en blocs de $n$
-bits, et les utiliser comme la matrice $A$. Cependant cette matrice n'est
-pas directement aléatoire. Il faut donc la randomiser. Pour ça il faut
-être capable de générer du bruit.
+
 
 \section{Modèles et cryptanalyses}
 Les protocoles présentés précédemment font tous l'hypothèse que le
@@ -312,6 +845,9 @@ certaine probabilité $1-\eta$, $\forall
 $\mathcal{A}$ tel qu'avec probabilité au moins $1-\delta$ l'algorithme donne une
 $\epsilon$-approximation de la fonction cible sur $\mathcal{D}$. 
 \end{defi}
+Ce modèle est un peu le modèle canonique, celui auquel on pense
+naturellement si on se pose la question de définir la notion d'être
+appréhensible.
 \subsubsection{Modèle SQ}
 Le modèle SQ (pour Statistical Queries) propose un cadre pour étudier
 certains problèmes d'apprentissages. Le modèle se définit comme une
@@ -366,14 +902,134 @@ On appelle dimension SQ de $\mathcal{F}$ le cardinal
 du plus grand ensemble de fonctions $f_1,\dots, f_d$ telles que 
 $$\forall i \not= j, |Pr_D(f_i=f_j)-Pr_D(f_i \not= f_j)|\leq \frac{1}{d^3} $$
 \end{defi}
+\begin{framed}
 \begin{theo}
 Soit $\mathcal{F}$ une classe de fonctions booléennes et $\mathcal{D}$
 une distribution telle que $SQ_{dim}(\mathcal{F}, \mathcal{D})\geq d \geq
 16$. Alors si toutes les queries sont faites avec tolérance
 $\tau\geq\frac{1}{d^{\frac{1}{3}}}$, au moins $d^{\frac{1}{3}}/2$ queries
 sont nécessaires pour apprendre $\mathcal{F}$ avec une erreur inférieur a
-$\frac{1}{2}-\frac{1}{d^3}$ 
+$\frac{1}{2}-\frac{1}{d^3}$\footnote{On ne s'occupera pas rigoureusement de l'erreur
+dans la preuve voir \cite{Blum} pour plus de détails.}
 \end{theo}
+\begin{proof}
+Tout d'abord certains lemme ne seront pas prouvés ici, essentiellement
+parce qu'ils ne sont pas intrinsèquement intéressants, et que la place
+est réduite, ce sont des lemmes de majoration qui font essentiellement
+usage d'inégalités classiques.\\ 
+Dans cette preuve les fonctions à apprendre sont considérées à valeur dans
+$\{-1,1\}$. On considère aussi les statistical queries comme des
+applications à valeurs dans $\{-1,1\}$, dont l'oracle nous donne
+l'espérance sous la distribution D. On remarque au passage qu'il y a un
+nombre fini de statistical queries.
+\\
+On définit le produit scalaire influencé par la distribution D par :
+$$ f._{D}g=E_D[f.g]=\sum_{x\in\{0,1\}^n} D(x).f(x).g(x)$$
+L'hypothèse peut ainsi se reformuler en :
+$$\forall i \not= j , |f_i._{D}f_{j}|\leq\frac{1}{d^3}$$
+Ce qui veut dire que les fonctions sont presques orthogonales.
+On remarque aussi que $ f._{D}f=1$ pour toute fonction f (à valeur dans
+$\{-1,1\}$).
+\begin{lemma}
+Pour $d\geq4$ les fonctions $f_1,\dots,f_d$ sont linéairements
+indépendantes. (C'est le d de la dimension SQ!)
+\end{lemma}
+\begin{proof}
+Supposons au contraire qu'il existe une relation linéaire non triviale , alors :
+\\
+\begin{center}
+\begin{tabular}{r c l}
+$0$ & $=$ & $E_D[(f_1-\sum\limits_{i \geq 2}\alpha_i.f_i)^2]$\\
+&$=$& $E_D[f_1^2] - 2.\sum\limits_{i \geq 2}
+\alpha_i.E_D[f_1.f_i]+\sum\limits_{i,j\geq
+2} \alpha_i.\alpha_j.E_D[f_i.f_j] $ \\
+&$=$& $1-2.\sum\limits_{i \geq 2} \alpha_i.E_D[f_1.f_i] + \sum\limits_{i\geq 2}
+\alpha_i^2 + \sum\limits_{i,j\geq2, i\not=j} \alpha_i.\alpha_{j}.E_D[f_i.f_j] $ \\
+\end{tabular}
+\end{center}
+Puis on minore le terme de droite grâce à la valeur absolue la plus
+grande de coefficient : 
+$$  1-2.\sum\limits_{i \geq 2} \alpha_i.E_D[f_1.f_i] + \sum\limits_{i\geq 2}
+\alpha_i^2 + \sum\limits_{i,j\geq2, i\not=j}
+\alpha_i.\alpha_{j}.E_D[f_i.f_j] \geq 1+
+\alpha_{max}^2-\frac{2.\alpha_{max}}{d^2} - \frac{\alpha_{max}^2}{d}  $$
+car $E_D[f_i.f_j]=f_i._{D}f_j \leq \frac {1}{d^3}$ par hypothèse. Or
+notre minoration est elle même minorée par 0 par une étude de fonction
+simple ($\alpha_{max} \geq 0$) 
+\end{proof}
+
+Sans perte de généralité on peut supposer que le support de D est tout
+l'espace. En effet si ce n'est pas le cas, on prend une $\epsilon$-cacahuète de
+masse, que l'on réparti uniformément sur les vecteurs dont la masse était
+auparavant nulle. Avec une masse suffisament petite pour que cette masse
+ne soit pas atteignable par un algorithme d'apprentissage polynomial.
+\\\\
+On applique Gram-Schmidt pour compléter $f_1,\dots,f_d$ en une base $f_1,\dots,f_d,\dots,f_{2^n}$ telle que :
+ $$\forall i\geq d+1,\forall j\not=i,f_i._{D}f_j=0,f_i._{D}f_i=1  $$
+
+Attention, cette base n'est pas orthonormée puisque les premiers vecteurs
+sont seulement pseudo-orthogonaux entre eux.\\\\
+ Sachant qu'une statistical querie est une fonction $g: GF(2)^n \times
+\{-1,1\} \rightarrow \{-1,1\}$, on va chercher à construire une base des
+statistical queries. Pour ça on définit $\tilde{D}$ sur $GF(2)^n\times
+\{-1,1\}$, comme produit de $D$ et de la distribution uniforme. Puis on
+étend les $f_i$, de deux manières différentes, pour les considérer comme statistical queries :
+
+$$\begin{cases}
+h_i(x,y)=y.f_i(x)\\
+f_i(x,y)=f_i(x)
+\end{cases}
+$$
+
+Or $(h_i)\cup(f_i)$ est une base des fonctions sur $GF(2)\times\{-1,1\}$
+muni du produit scalaire $._{\tilde{D}}$. Pour vérifier ceci on peut
+refaire une preuve identique à celle du lemme. Ainsi on peut décomposer
+toute statistical query sur cette base : 
+$$\forall g, g= \sum_{i\geq 1} \alpha_i.f_i + \sum_{i\geq1} \beta_i.h_i$$
+
+\begin{lemma}
+Si on décomposer $g$ comme précèdemment alors on pourra montrer :
+$|\alpha_i|,|\beta_i|\leq 2$. 
+\end{lemma} 
+Puis alors on peut regarder l'espérance de g, sur une fonction $f_j$ :
+\begin{center}
+\begin{tabular}{r c l}
+$E_{D}[g(x,f_j(x)]$ 
+& $=$ &
+$E_{D}[\sum\limits_{i\geq 1}\alpha_i.f_i(x)+\sum\limits_{i\geq 1}
+\beta_i.h_i(x,f_j(x))]$ \\
+&$=$&
+ $\sum\limits_{i\geq 1}\alpha_i.E_D[f_i]+\sum\limits_{i\geq
+1}\beta_i.E_D[f_i.f_j] $  \\
+&$=$&
+ $C+\sum\limits_{i\leq d} \beta_i.(f_{i}._{D}f_{j})  $
+\end{tabular}
+\end{center}
+or 
+$\beta_j-\frac{2}{d^2} \leq\sum\limits_{i\leq d}
+\beta_i.(f_{i}._{D}f_{j})\leq \beta_j+\frac{2}{d^2} $ en utilisant le
+lemme précèdant. Donc la contribution majeure de la fonction cible se fait
+par le coefficient $\beta_j$, le reste étant en $O(1/d^2)$.
+
+Et finalement on cherche à établir combien de fonctions dans
+$f_1,\dots,f_d$ peuvent être éliminées par
+cette statistical query g.
+\begin{lemma}
+On peut montrer  $\sum\limits_{i\leq d}\beta_{i}^2 \leq 2$\footnote{C'est ici que l'on a besoin de $d\geq16$}. 
+\end{lemma}
+Donc si la query g est faite avec une tolérance supérieur à
+$1/d^{\frac{1}{3}}$, alors la fonction $f_j$ est éliminée seulement si
+$\beta_j \geq 1/d^{\frac{1}{3}}$. Mais par le dernier lemme, si on note r
+le nombre de fonctions pour lesquelles c'est le cas, on a :
+$$r(1/d^{\frac{1}{3}})^2\leq 2$$
+$$r\leq2.d^{\frac{2}{3}}$$
+Donc autrement dit, au moins $d^{\frac{1}{3}}/2$ queries sont necessaires
+pour éliminer les fonctions de $f_1,\dots, f_d$ qui ne sont pas la
+fonction cible, puisque chaque query ne peut en éliminer qu'un nombre
+inférieur à  $2.d^{\frac{2}{3}}$.
+
+\end{proof}
+\end{framed}
 \begin{theo}
 L'ensemble des fonctions booléennes sur $GF(2)^n$ n'est pas
 SQ-learnable.
@@ -589,7 +1245,9 @@ construction, en la solution, qui est de poid de hamming $k$.
 
 \end{proof}
 \end{framed}
-\begin{figure}
+
+
+\begin{figure}[h]
 \centering
 \begin{tikzpicture}
 
@@ -817,10 +1475,13 @@ polynomial : $O(n^m)$
 
 
 
-\paragraph{Réduction de bruit : Contribution} \hrulefill \label{SAT} 
+\paragraph{Réduction de bruit : Contribution}  \label{SAT} 
 Jusqu'à présent nous n'avons pas encore vu de méthodes pour réduire le
-bruit du LPN. Dans ce but on peut faire le OU de disons k équations, et
-alors on obtient une équation juste avec très grande probabilité.
+bruit du LPN. On commence par remarquer que l'opération booléenne OU peut
+se traduire dans $GF(2)$ par les lois de De Morgan de la façon suivante : 
+$$x\vee y=1-(1-x).(1-y)$$ 
+Alors on peut faire le OU de disons k équations, et
+donc on obtient une équation juste avec très grande probabilité.
 Ainsi en augmentant le degré des équations, on diminue le bruit à
 vitesse exponentielle :
  $$P(\bar\nu_1 \vee \bar\nu_2 \vee \dots \vee \bar\nu_k)=(\epsilon)^k$$
@@ -960,7 +1621,7 @@ finesse d'évaluation des coefficients.
 \end{itemize}
 \end{defi}
 
-\begin{theo}\cite{Vaudenay}
+\begin{theo}
 $akmv(c, \delta)$ est un bon estimateur de la somme des carrés modules des coefficients
 de Fourier :
 $$\sum_{\alpha\in I(c, \delta)} |\hat{f}(\alpha)|^2 - \gamma.2^{2.k}\leq
